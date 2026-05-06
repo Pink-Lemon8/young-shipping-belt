@@ -186,91 +186,91 @@ export default function ProcessViewData({
       return viewItemsButton;
     }
     return (
-    <div className="flex items-center gap-1">
-    {viewItemsButton}
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="cursor-pointer gap-2">
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        {!["SENT_TO_BELT", "STAGE1"].includes(selectedQueue.status) && (
-          <DropdownMenuItem
-            className="cursor-pointer gap-2"
-            onSelect={() => {
-              setQueue(selectedQueue);
-              setPushBackToStage1Open(true);
-            }}
-          >
-            <SkipBack className="h-4 w-4" />
-            Push Back to Stage 1
-          </DropdownMenuItem>
-        )}
-        {["STAGE2", "STAGE3"].includes(selectedQueue.status) && (
-          <DropdownMenuItem
-            className="cursor-pointer gap-2"
-            onSelect={() => {
-              setQueue(selectedQueue);
-              setCompleteOrderOpen(true);
-            }}
-          >
-            <CheckCheck className="h-4 w-4 text-green-600" />
-            Push Completed
-          </DropdownMenuItem>
-        )}
-        {selectedQueue.affiliateId === -1 &&
-          selectedQueue.status === "COMPLETED" && (
+      <div className="flex items-center gap-1">
+        {viewItemsButton}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="cursor-pointer gap-2">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            {!["SENT_TO_BELT", "STAGE1"].includes(selectedQueue.status) && (
+              <DropdownMenuItem
+                className="cursor-pointer gap-2"
+                onSelect={() => {
+                  setQueue(selectedQueue);
+                  setPushBackToStage1Open(true);
+                }}
+              >
+                <SkipBack className="h-4 w-4" />
+                Push Back to Stage 1
+              </DropdownMenuItem>
+            )}
+            {["STAGE2", "STAGE3"].includes(selectedQueue.status) && (
+              <DropdownMenuItem
+                className="cursor-pointer gap-2"
+                onSelect={() => {
+                  setQueue(selectedQueue);
+                  setCompleteOrderOpen(true);
+                }}
+              >
+                <CheckCheck className="h-4 w-4 text-green-600" />
+                Push Completed
+              </DropdownMenuItem>
+            )}
+            {selectedQueue.affiliateId === -1 &&
+              selectedQueue.status === "COMPLETED" && (
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2"
+                  onSelect={() => {
+                    setQueue(selectedQueue);
+                    setUpdateLymlightStatusOpen(true);
+                  }}
+                >
+                  <Radar className="h-4 w-4 text-violet-600" />
+                  Update Lymlight Status
+                </DropdownMenuItem>
+              )}
             <DropdownMenuItem
               className="cursor-pointer gap-2"
               onSelect={() => {
                 setQueue(selectedQueue);
-                setUpdateLymlightStatusOpen(true);
+                const s = selectedQueue.status;
+                const defaultStage: "1" | "2" | "3" =
+                  s === "STAGE3" || s === "COMPLETED"
+                    ? "3"
+                    : s === "STAGE2"
+                      ? "2"
+                      : "1";
+                setUploadStageImageDefaultStage(defaultStage);
+                setUploadStageImageOpen(true);
               }}
             >
-              <Radar className="h-4 w-4 text-violet-600" />
-              Update Lymlight Status
+              <ImagePlus className="h-4 w-4 text-blue-600" />
+              Upload Stage Image
             </DropdownMenuItem>
-          )}
-        <DropdownMenuItem
-          className="cursor-pointer gap-2"
-          onSelect={() => {
-            setQueue(selectedQueue);
-            const s = selectedQueue.status;
-            const defaultStage: "1" | "2" | "3" =
-              s === "STAGE3" || s === "COMPLETED"
-                ? "3"
-                : s === "STAGE2"
-                  ? "2"
-                  : "1";
-            setUploadStageImageDefaultStage(defaultStage);
-            setUploadStageImageOpen(true);
-          }}
-        >
-          <ImagePlus className="h-4 w-4 text-blue-600" />
-          Upload Stage Image
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-          onSelect={() => {
-            setQueue(selectedQueue);
-            setDeleteFromBeltOpen(true);
-          }}
-        >
-          <Trash className="h-4 w-4" />
-          Delete from Belt
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="cursor-pointer gap-2"
-          onSelect={() => openQueueDetails(selectedQueue)}
-        >
-          <Info className="h-4 w-4" />
-          View Details
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-    </div>
+            <DropdownMenuItem
+              className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+              onSelect={() => {
+                setQueue(selectedQueue);
+                setDeleteFromBeltOpen(true);
+              }}
+            >
+              <Trash className="h-4 w-4" />
+              Delete from Belt
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer gap-2"
+              onSelect={() => openQueueDetails(selectedQueue)}
+            >
+              <Info className="h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     );
   };
 
@@ -462,6 +462,10 @@ export default function ProcessViewData({
                             groupIdToOrderIds[queue.groupId]?.length
                             ? groupIdToOrderIds[queue.groupId]
                             : orderIdsInGroup;
+                        const rowQueues = [queue, ...row.groupMembers];
+                        const allItemsOrdered = rowQueues.every(
+                          (q: any) => q.allItemsOrdered,
+                        );
                         return (
                           <TableRow
                             key={queue.id}
@@ -620,8 +624,16 @@ export default function ProcessViewData({
                             <TableCell className="align-middle px-4 py-3 text-sm text-primary font-semibold max-w-[125px]">
                               {queue.trackingNumber}
                             </TableCell>
-                            <TableCell className="align-middle px-4 py-3 min-w-[140px]">
-                              <Status status={queue.status} />
+                            <TableCell className="align-middle px-4 py-3 min-w-[165px]">
+                              <div className="flex flex-col items-start gap-2">
+                                <Status status={queue.status} />
+                                {allItemsOrdered && (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-linear-to-r from-emerald-500/15 to-green-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:text-emerald-300">
+                                    <CheckCheck className="h-3.5 w-3.5" />
+                                    Ordered
+                                  </span>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="align-middle px-4 py-3 min-w-[240px] max-w-[240px]">
                               {queue.PharmacistReview !== null &&
@@ -734,6 +746,10 @@ export default function ProcessViewData({
                     groupIdToOrderIds[queue.groupId]?.length
                     ? groupIdToOrderIds[queue.groupId]
                     : orderIdsInGroup;
+                const rowQueues = [queue, ...row.groupMembers];
+                const allItemsOrdered = rowQueues.every(
+                  (q: any) => q.allItemsOrdered,
+                );
                 return (
                   <Card
                     key={queue.id}
@@ -899,12 +915,20 @@ export default function ProcessViewData({
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Status status={queue.status} />
-                          <ChevronDown
-                            size={16}
-                            className={`transition-transform ${isExpanded[queue.id] ? "rotate-180" : ""}`}
-                          />
+                        <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <Status status={queue.status} />
+                            <ChevronDown
+                              size={16}
+                              className={`transition-transform ${isExpanded[queue.id] ? "rotate-180" : ""}`}
+                            />
+                          </div>
+                          {allItemsOrdered && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-linear-to-r from-emerald-500/15 to-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:text-emerald-300">
+                              <CheckCheck className="h-3 w-3" />
+                              Ordered
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

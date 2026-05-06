@@ -27,6 +27,35 @@ import {
   sql,
 } from "drizzle-orm";
 
+function getOrderedItemKey(item: {
+  packageId?: string | number | null;
+  legacyId?: string | number | null;
+  din?: string | number | null;
+  description?: string | null;
+}) {
+  return JSON.stringify({
+    packageId: item.packageId ?? null,
+    legacyId: item.legacyId ?? null,
+    din: item.din ?? null,
+    description: item.description ?? null,
+  });
+}
+
+function getOrderedItems(metadata: any): Record<string, boolean> {
+  if (
+    !metadata ||
+    typeof metadata !== "object" ||
+    Array.isArray(metadata) ||
+    !metadata.orderedItems ||
+    typeof metadata.orderedItems !== "object" ||
+    Array.isArray(metadata.orderedItems)
+  ) {
+    return {};
+  }
+
+  return metadata.orderedItems;
+}
+
 export async function getQueueByBeltCode(
   beltCode: String,
   status: Array<(typeof beltQueueStatusTypes)[number]> | undefined = undefined,
@@ -564,13 +593,52 @@ export async function getQueueByBeltCodeInProcessView(
     }
 
     const finalQueue = [...queueWihPharmacistReview, ...extraQueueRows];
+    const finalQueueOrderIds = [...new Set(finalQueue.map((item) => item.orderId))];
+    const expectedItemsForQueue =
+      finalQueueOrderIds.length > 0
+        ? await db
+          .select({
+            orderId: orderExpectedItems.orderId,
+            packageId: orderExpectedItems.packageId,
+            legacyId: orderExpectedItems.legacyId,
+            din: orderExpectedItems.din,
+            description: orderExpectedItems.description,
+          })
+          .from(orderExpectedItems)
+          .where(inArray(orderExpectedItems.orderId, finalQueueOrderIds))
+        : [];
+    const expectedItemsByOrderId = new Map<
+      string,
+      typeof expectedItemsForQueue
+    >();
+
+    for (const item of expectedItemsForQueue) {
+      const existing = expectedItemsByOrderId.get(item.orderId) ?? [];
+      expectedItemsByOrderId.set(item.orderId, [...existing, item]);
+    }
+
+    const finalQueueWithOrderedStatus = finalQueue.map((item) => {
+      const expectedItems = expectedItemsByOrderId.get(item.orderId) ?? [];
+      const orderedItems = getOrderedItems(item.metadata);
+      const orderedItemsCount = expectedItems.filter(
+        (expectedItem) => orderedItems[getOrderedItemKey(expectedItem)],
+      ).length;
+
+      return {
+        ...item,
+        expectedItemsCount: expectedItems.length,
+        orderedItemsCount,
+        allItemsOrdered:
+          expectedItems.length > 0 && orderedItemsCount === expectedItems.length,
+      };
+    });
 
     // const end = performance.now();
     // console.log(
     //   `Time taken: \x1b[33m${((end - start) / 1000).toFixed(3)}\x1b[0m seconds`
     // );
     return {
-      queue: finalQueue,
+      queue: finalQueueWithOrderedStatus,
       length: countQueue.length,
       totalPages: Math.ceil(countQueue.length / (limit ?? 10)) || 1,
       groupIdToOrderIds,

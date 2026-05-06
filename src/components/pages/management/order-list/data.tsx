@@ -278,13 +278,7 @@ export default function OrderListData({
                     Files
                   </TableHead>
                   <TableHead className="px-4 py-3 whitespace-nowrap">
-                    Label Created
-                  </TableHead>
-                  <TableHead className="px-4 py-3 whitespace-nowrap">
                     Sent to Belt
-                  </TableHead>
-                  <TableHead className="px-4 py-3 whitespace-nowrap">
-                    Shipped At
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -396,15 +390,7 @@ export default function OrderListData({
                       </TableCell>
 
                       <TableCell className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDate(queue.labelCreatedAt)}
-                      </TableCell>
-
-                      <TableCell className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(queue.createdAt)}
-                      </TableCell>
-
-                      <TableCell className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {queue.shippedAt ? formatDate(queue.shippedAt) : "N/A"}
                       </TableCell>
                     </TableRow>
                   );
@@ -498,23 +484,9 @@ export default function OrderListData({
                       </div>
                       <div>
                         <span className="text-muted-foreground">
-                          Label Created:{" "}
-                        </span>
-                        <span>{formatDate(queue.labelCreatedAt)}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">
                           Sent to Belt:{" "}
                         </span>
                         <span>{formatDate(queue.createdAt)}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">
-                          Shipped At:{" "}
-                        </span>
-                        <span>
-                          {queue.shippedAt ? formatDate(queue.shippedAt) : "N/A"}
-                        </span>
                       </div>
                     </div>
 

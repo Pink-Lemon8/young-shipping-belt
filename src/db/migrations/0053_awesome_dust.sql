@@ -1,0 +1,11 @@
+-- ALTER TABLE `belt_queues` MODIFY COLUMN `status` enum('PENDING','SENT_TO_BELT','STAGE1','STAGE2','STAGE3','COMPLETED','FAILED') DEFAULT 'SENT_TO_BELT';--> statement-breakpoint
+-- ALTER TABLE `belt_queues_history` MODIFY COLUMN `status` enum('PENDING','SENT_TO_BELT','STAGE1','STAGE2','STAGE3','COMPLETED','FAILED') DEFAULT 'SENT_TO_BELT';--> statement-breakpoint
+-- ALTER TABLE `belt_queues` ADD `is_cv` boolean DEFAULT false;--> statement-breakpoint
+-- ALTER TABLE `belt_queues` ADD `cv_files` json;--> statement-breakpoint
+-- ALTER TABLE `belt_queues` ADD `cv_files_created_at` timestamp;--> statement-breakpoint
+-- ALTER TABLE `belt_queues` ADD `metadata` json;--> statement-breakpoint
+-- ALTER TABLE `belt_queues_history` ADD `is_cv` boolean DEFAULT false;--> statement-breakpoint
+-- ALTER TABLE `belt_queues_history` ADD `cv_files` json;--> statement-breakpoint
+-- ALTER TABLE `belt_queues_history` ADD `cv_files_created_at` timestamp;--> statement-breakpoint
+-- ALTER TABLE `belt_queues_history` ADD `metadata` json;
+COMMIT;

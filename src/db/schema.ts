@@ -189,6 +189,8 @@ const queueTableAttributes = {
   cvFiles: json("cv_files").$type<Array<any>>(),
   cvFilesCreatedAt: timestamp("cv_files_created_at"),
 
+  metadata: json("metadata").$type<any>(),
+
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").default(
     sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
