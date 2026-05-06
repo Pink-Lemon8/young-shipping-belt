@@ -35,4 +35,4 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-> **Note:** This project is implemented exclusively for Belt B. All process logic and queue mechanics are specific to Belt B — other belt codes or belts are not supported in this system. The application is designed to handle and manage workflows for belt code "B" only.
+> **Note:** This project is implemented exclusively for Belt C. All process logic and queue mechanics are specific to Belt C — other belt codes or belts are not supported in this system. The application is designed to handle and manage workflows for belt code "C" only.
