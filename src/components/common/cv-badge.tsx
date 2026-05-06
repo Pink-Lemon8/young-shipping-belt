@@ -14,7 +14,7 @@ export function CvBadge({
     <Badge
       variant="secondary"
       className={cn(
-        "border border-[#3B82F6]/30 bg-[#3B82F6]/15 text-[#3B82F6] hover:bg-[#3B82F6]/20 font-bold px-2 py-0.5 text-xs",
+        "border border-[#d1a5cc]/30 bg-[#d1a5cc]/15 text-[#d1a5cc] hover:bg-[#d1a5cc]/20 font-bold px-2 py-0.5 text-xs",
         className,
       )}
     >
