@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 
+const PARKWAY_BELT_CODES = new Set(["C", "C1", "C2", "C3"]);
+
 export async function proxy(request: NextRequest) {
   const authentication = await auth.api.getSession({
     headers: await headers(),
@@ -16,12 +18,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/sign-out", request.url));
 
 
-  if (authentication &&
-    authentication.user?.role === "belt"
-    &&
-    authentication.user?.beltCode !== "C"
-    && request.nextUrl.pathname !== "/sign-out")
+  if (
+    authentication &&
+    authentication.user?.role === "belt" &&
+    !PARKWAY_BELT_CODES.has(authentication.user?.beltCode ?? "None") &&
+    request.nextUrl.pathname !== "/sign-out"
+  ) {
     return NextResponse.redirect(new URL("/sign-out", request.url));
+  }
 
   return NextResponse.next();
 }
