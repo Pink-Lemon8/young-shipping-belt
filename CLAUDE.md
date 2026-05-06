@@ -1,7 +1,7 @@
-# Cedar Valley Belt Project Documentation
+# Yyoung Belt Project Documentation
 
 ## Project Overview
-The Cedar Valley Belt is a pharmaceutical warehouse management system that processes orders through a multi-stage conveyor belt system. It manages order fulfillment from receipt through quality control to shipping.
+The Yyoung Clinic Belt is a pharmaceutical warehouse management system that processes orders through a multi-stage conveyor belt system. It manages order fulfillment from receipt through quality control to shipping.
 
 ### Core Functionality
 - **Belt Processing System**: 3-stage order processing workflow
