@@ -7,15 +7,22 @@ export async function proxy(request: NextRequest) {
   const authentication = await auth.api.getSession({
     headers: await headers(),
   });
-  if (
-    authentication &&
+  if (authentication &&
     ["pharmacy", "labelHelper", "csr", "regular"].includes(
       authentication.user?.role ?? "regular"
     ) &&
     request.nextUrl.pathname !== "/sign-out"
-  ) {
+  )
     return NextResponse.redirect(new URL("/sign-out", request.url));
-  }
+
+
+  if (authentication &&
+    authentication.user?.role === "belt"
+    &&
+    authentication.user?.beltCode !== "C"
+    && request.nextUrl.pathname !== "/sign-out")
+    return NextResponse.redirect(new URL("/sign-out", request.url));
+
   return NextResponse.next();
 }
 
