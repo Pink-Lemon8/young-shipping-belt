@@ -1,0 +1,2 @@
+ALTER TABLE `belt_queues` ADD `shipped_at` timestamp;--> statement-breakpoint
+ALTER TABLE `belt_queues_history` ADD `shipped_at` timestamp;

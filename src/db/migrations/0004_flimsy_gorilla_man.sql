@@ -1,0 +1,1 @@
+ALTER TABLE `belt_users` ADD `kicker` int DEFAULT 0;

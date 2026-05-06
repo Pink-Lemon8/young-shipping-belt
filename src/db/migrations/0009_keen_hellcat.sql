@@ -1,0 +1,1 @@
+ALTER TABLE `affiliates` ADD `logo` json;

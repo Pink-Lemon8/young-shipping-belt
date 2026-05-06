@@ -1,0 +1,1 @@
+ALTER TABLE `box_sizes` ADD `unit` enum('CM','MM','IN','DEFAULT') DEFAULT 'IN';

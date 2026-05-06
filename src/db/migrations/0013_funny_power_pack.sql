@@ -1,0 +1,1 @@
+ALTER TABLE `belt_logs` ADD `order_id` varchar(255);

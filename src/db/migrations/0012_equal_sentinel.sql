@@ -1,0 +1,2 @@
+ALTER TABLE `affiliates` ADD `default_box_size_id` int;--> statement-breakpoint
+ALTER TABLE `affiliates` ADD CONSTRAINT `affiliates_default_box_size_id_box_sizes_id_fk` FOREIGN KEY (`default_box_size_id`) REFERENCES `box_sizes`(`id`) ON DELETE set null ON UPDATE no action;

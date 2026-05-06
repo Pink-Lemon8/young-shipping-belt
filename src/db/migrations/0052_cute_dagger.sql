@@ -1,0 +1,32 @@
+-- CREATE TABLE `return_labels` (
+-- 	`id` int AUTO_INCREMENT NOT NULL,
+-- 	`order_id` varchar(255),
+-- 	`tempaid_box_id` int,
+-- 	`shippo_transaction_id` varchar(255),
+-- 	`shippo_shipment_id` varchar(255),
+-- 	`shippo_carrier_account` varchar(255),
+-- 	`label_url` varchar(512) NOT NULL,
+-- 	`tracking_number` varchar(255),
+-- 	`tracking_url_provider` varchar(512),
+-- 	`carrier` varchar(50),
+-- 	`service_level` varchar(100),
+-- 	`shipping_cost` decimal(8,2),
+-- 	`currency` varchar(3) DEFAULT 'USD',
+-- 	`pickup_address` json,
+-- 	`pickup_object_id` varchar(255),
+-- 	`pickup_confirmation_code` varchar(255),
+-- 	`pickup_status` varchar(50),
+-- 	`pickup_scheduled_at` timestamp,
+-- 	`pickup_ready_time` varchar(4),
+-- 	`pickup_close_time` varchar(4),
+-- 	`pickup_confirmed_start` timestamp,
+-- 	`pickup_confirmed_end` timestamp,
+-- 	`created_by` varchar(36),
+-- 	`created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+-- 	`updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+-- 	CONSTRAINT `return_labels_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- ALTER TABLE `return_labels` ADD CONSTRAINT `return_labels_tempaid_box_id_tempaid_boxes_id_fk` FOREIGN KEY (`tempaid_box_id`) REFERENCES `tempaid_boxes`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `return_labels` ADD CONSTRAINT `return_labels_created_by_user_id_fk` FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON DELETE set null ON UPDATE no action;
+COMMIT;

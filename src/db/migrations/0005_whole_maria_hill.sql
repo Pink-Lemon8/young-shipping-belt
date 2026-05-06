@@ -1,0 +1,1 @@
+ALTER TABLE `belt_queues` ADD `cage_code` varchar(255);

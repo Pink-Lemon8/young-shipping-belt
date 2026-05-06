@@ -1,0 +1,43 @@
+-- CREATE TABLE `tempaid_box_history` (
+-- 	`id` int AUTO_INCREMENT NOT NULL,
+-- 	`tempaid_box_id` int NOT NULL,
+-- 	`order_id` varchar(255),
+-- 	`action` varchar(50) NOT NULL,
+-- 	`tracking_number` varchar(255),
+-- 	`return_tracking_number` varchar(255),
+-- 	`performed_by` varchar(36),
+-- 	`notes` text,
+-- 	`created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+-- 	CONSTRAINT `tempaid_box_history_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `tempaid_boxes` (
+-- 	`id` int AUTO_INCREMENT NOT NULL,
+-- 	`box_number` varchar(50) NOT NULL,
+-- 	`box_size_id` int,
+-- 	`status` enum('AVAILABLE','IN_USE','IN_TRANSIT','RECEIVED','RETIRED') DEFAULT 'AVAILABLE',
+-- 	`current_order_id` varchar(255),
+-- 	`tracking_number` varchar(255),
+-- 	`return_tracking_number` varchar(255),
+-- 	`notes` text,
+-- 	`created_by` varchar(36),
+-- 	`created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+-- 	`updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+-- 	CONSTRAINT `tempaid_boxes_id` PRIMARY KEY(`id`),
+-- 	CONSTRAINT `tempaid_boxes_box_number_unique` UNIQUE(`box_number`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `tempaid_drugs` (
+-- 	`id` int AUTO_INCREMENT NOT NULL,
+-- 	`drug_id` int NOT NULL,
+-- 	`created_by` varchar(36),
+-- 	`created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+-- 	CONSTRAINT `tempaid_drugs_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- ALTER TABLE `tempaid_box_history` ADD CONSTRAINT `tempaid_box_history_tempaid_box_id_tempaid_boxes_id_fk` FOREIGN KEY (`tempaid_box_id`) REFERENCES `tempaid_boxes`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `tempaid_box_history` ADD CONSTRAINT `tempaid_box_history_performed_by_user_id_fk` FOREIGN KEY (`performed_by`) REFERENCES `user`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `tempaid_boxes` ADD CONSTRAINT `tempaid_boxes_box_size_id_box_sizes_id_fk` FOREIGN KEY (`box_size_id`) REFERENCES `box_sizes`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `tempaid_boxes` ADD CONSTRAINT `tempaid_boxes_created_by_user_id_fk` FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `tempaid_drugs` ADD CONSTRAINT `tempaid_drugs_drug_id_drugs_id_fk` FOREIGN KEY (`drug_id`) REFERENCES `drugs`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `tempaid_drugs` ADD CONSTRAINT `tempaid_drugs_created_by_user_id_fk` FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON DELETE set null ON UPDATE no action;

@@ -1,0 +1,2 @@
+ALTER TABLE `belt_queues` ADD CONSTRAINT `belt_queues_affiliate_id_affiliates_id_fk` FOREIGN KEY (`affiliate_id`) REFERENCES `affiliates`(`id`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE `belt_queues_history` ADD CONSTRAINT `belt_queues_history_affiliate_id_affiliates_id_fk` FOREIGN KEY (`affiliate_id`) REFERENCES `affiliates`(`id`) ON DELETE set null ON UPDATE cascade;

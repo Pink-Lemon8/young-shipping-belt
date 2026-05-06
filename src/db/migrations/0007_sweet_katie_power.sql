@@ -1,0 +1,3 @@
+ALTER TABLE `belt_queues` MODIFY COLUMN `pharmacist_reviewed` enum('PENDING','APPROVED','DENIED') DEFAULT 'PENDING';--> statement-breakpoint
+ALTER TABLE `belt_queues` ADD `pharmacist_reviewed_by` int;--> statement-breakpoint
+ALTER TABLE `belt_queues` ADD CONSTRAINT `belt_queues_pharmacist_reviewed_by_belt_users_id_fk` FOREIGN KEY (`pharmacist_reviewed_by`) REFERENCES `belt_users`(`id`) ON DELETE set null ON UPDATE no action;

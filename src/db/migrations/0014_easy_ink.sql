@@ -1,0 +1,1 @@
+ALTER TABLE `belt_queues` ADD `shipping_method` enum('FEDEX','CANADA_POST','UPS','DEFAULT') DEFAULT 'DEFAULT';

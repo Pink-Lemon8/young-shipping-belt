@@ -1,0 +1,1 @@
+ALTER TABLE `belt_queues_pharmacist_review` RENAME COLUMN `pharmacist_review_status` TO `status`;

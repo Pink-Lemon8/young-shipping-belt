@@ -1,0 +1,131 @@
+-- CREATE TABLE `account` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`account_id` text NOT NULL,
+-- 	`provider_id` text NOT NULL,
+-- 	`user_id` varchar(36) NOT NULL,
+-- 	`access_token` text,
+-- 	`refresh_token` text,
+-- 	`id_token` text,
+-- 	`access_token_expires_at` timestamp,
+-- 	`refresh_token_expires_at` timestamp,
+-- 	`scope` text,
+-- 	`password` text,
+-- 	`created_at` timestamp NOT NULL,
+-- 	`updated_at` timestamp NOT NULL,
+-- 	CONSTRAINT `account_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `apikey` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`name` text,
+-- 	`start` text,
+-- 	`prefix` text,
+-- 	`key` text NOT NULL,
+-- 	`user_id` varchar(36) NOT NULL,
+-- 	`refill_interval` int,
+-- 	`refill_amount` int,
+-- 	`last_refill_at` timestamp,
+-- 	`enabled` boolean DEFAULT true,
+-- 	`rate_limit_enabled` boolean DEFAULT true,
+-- 	`rate_limit_time_window` int DEFAULT 86400000,
+-- 	`rate_limit_max` int DEFAULT 10,
+-- 	`request_count` int,
+-- 	`remaining` int,
+-- 	`last_request` timestamp,
+-- 	`expires_at` timestamp,
+-- 	`created_at` timestamp NOT NULL,
+-- 	`updated_at` timestamp NOT NULL,
+-- 	`permissions` text,
+-- 	`metadata` text,
+-- 	CONSTRAINT `apikey_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `jwks` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`public_key` text NOT NULL,
+-- 	`private_key` text NOT NULL,
+-- 	`created_at` timestamp NOT NULL,
+-- 	CONSTRAINT `jwks_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `passkey` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`name` text,
+-- 	`public_key` text NOT NULL,
+-- 	`user_id` varchar(36) NOT NULL,
+-- 	`credential_i_d` text NOT NULL,
+-- 	`counter` int NOT NULL,
+-- 	`device_type` text NOT NULL,
+-- 	`backed_up` boolean NOT NULL,
+-- 	`transports` text,
+-- 	`created_at` timestamp,
+-- 	`aaguid` text,
+-- 	CONSTRAINT `passkey_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `session` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`expires_at` timestamp NOT NULL,
+-- 	`token` varchar(255) NOT NULL,
+-- 	`created_at` timestamp NOT NULL,
+-- 	`updated_at` timestamp NOT NULL,
+-- 	`ip_address` text,
+-- 	`user_agent` text,
+-- 	`user_id` varchar(36) NOT NULL,
+-- 	`impersonated_by` text,
+-- 	CONSTRAINT `session_id` PRIMARY KEY(`id`),
+-- 	CONSTRAINT `session_token_unique` UNIQUE(`token`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `two_factor` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`secret` text NOT NULL,
+-- 	`backup_codes` text NOT NULL,
+-- 	`user_id` varchar(36) NOT NULL,
+-- 	CONSTRAINT `two_factor_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `user` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`name` text NOT NULL,
+-- 	`email` varchar(255) NOT NULL,
+-- 	`email_verified` boolean NOT NULL,
+-- 	`image` text,
+-- 	`created_at` timestamp NOT NULL,
+-- 	`updated_at` timestamp NOT NULL,
+-- 	`role` text,
+-- 	`banned` boolean,
+-- 	`ban_reason` text,
+-- 	`ban_expires` timestamp,
+-- 	`two_factor_enabled` boolean,
+-- 	`phone_number` text,
+-- 	`language` text DEFAULT ('en-US'),
+-- 	`timezone` text DEFAULT ('UTC'),
+-- 	`time_format` text DEFAULT ('dd MMM yyyy, hh:mm a'),
+-- 	`bio` text,
+-- 	`department` text,
+-- 	`belt_code` text,
+-- 	`affiliates` text,
+-- 	CONSTRAINT `user_id` PRIMARY KEY(`id`),
+-- 	CONSTRAINT `user_email_unique` UNIQUE(`email`)
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE `verification` (
+-- 	`id` varchar(36) NOT NULL,
+-- 	`identifier` text NOT NULL,
+-- 	`value` text NOT NULL,
+-- 	`expires_at` timestamp NOT NULL,
+-- 	`created_at` timestamp,
+-- 	`updated_at` timestamp,
+-- 	CONSTRAINT `verification_id` PRIMARY KEY(`id`)
+-- );
+-- --> statement-breakpoint
+-- ALTER TABLE `affiliates` MODIFY COLUMN `created_by` varchar(36);--> statement-breakpoint
+-- ALTER TABLE `affiliates` ADD `metadata` json;--> statement-breakpoint
+-- ALTER TABLE `account` ADD CONSTRAINT `account_user_id_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `apikey` ADD CONSTRAINT `apikey_user_id_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `passkey` ADD CONSTRAINT `passkey_user_id_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `session` ADD CONSTRAINT `session_user_id_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+-- ALTER TABLE `two_factor` ADD CONSTRAINT `two_factor_user_id_user_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE cascade ON UPDATE no action;
+-- Better Auth migrations Done in Shipping App
+COMMIT;
