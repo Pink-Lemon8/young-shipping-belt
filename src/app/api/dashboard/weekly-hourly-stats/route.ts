@@ -4,7 +4,7 @@ import { beltQueues } from "@/db/schema";
 import { and, count, eq, gte, lte, sql } from "drizzle-orm";
 import { assertDashboardApiAccess } from "@/lib/auth/dashboard-api-auth";
 
-const DASHBOARD_BELT_CODE = "B";
+const DASHBOARD_BELT_CODE = "C";
 
 export async function GET() {
   const denied = await assertDashboardApiAccess();

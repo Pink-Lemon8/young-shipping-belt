@@ -15,7 +15,7 @@ import { redirect } from "next/navigation";
 import Loading from "./loading";
 
 export function generateStaticParams() {
-  return [{ code: "B" }, { code: "B1" }, { code: "B2" }, { code: "B3" }];
+  return [{ code: "C" }, { code: "C1" }, { code: "C2" }, { code: "C3" }];
 }
 
 type Params = Promise<{ code: string }>;
