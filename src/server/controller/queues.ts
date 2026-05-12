@@ -56,6 +56,21 @@ function getOrderedItems(metadata: any): Record<string, boolean> {
   return metadata.orderedItems;
 }
 
+function getReceivedItems(metadata: any): Record<string, boolean> {
+  if (
+    !metadata ||
+    typeof metadata !== "object" ||
+    Array.isArray(metadata) ||
+    !metadata.receivedItems ||
+    typeof metadata.receivedItems !== "object" ||
+    Array.isArray(metadata.receivedItems)
+  ) {
+    return {};
+  }
+
+  return metadata.receivedItems;
+}
+
 export async function getQueueByBeltCode(
   beltCode: String,
   status: Array<(typeof beltQueueStatusTypes)[number]> | undefined = undefined,
@@ -620,16 +635,24 @@ export async function getQueueByBeltCodeInProcessView(
     const finalQueueWithOrderedStatus = finalQueue.map((item) => {
       const expectedItems = expectedItemsByOrderId.get(item.orderId) ?? [];
       const orderedItems = getOrderedItems(item.metadata);
+      const receivedItems = getReceivedItems(item.metadata);
       const orderedItemsCount = expectedItems.filter(
         (expectedItem) => orderedItems[getOrderedItemKey(expectedItem)],
+      ).length;
+      const receivedItemsCount = expectedItems.filter(
+        (expectedItem) => receivedItems[getOrderedItemKey(expectedItem)],
       ).length;
 
       return {
         ...item,
         expectedItemsCount: expectedItems.length,
         orderedItemsCount,
+        receivedItemsCount,
         allItemsOrdered:
           expectedItems.length > 0 && orderedItemsCount === expectedItems.length,
+        allItemsReceived:
+          expectedItems.length > 0 &&
+          receivedItemsCount === expectedItems.length,
       };
     });
 

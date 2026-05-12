@@ -38,7 +38,28 @@ function getOrderedItems(metadata: any): Record<string, boolean> {
   return metadata.orderedItems;
 }
 
-function withOrderedFlag<
+function getReceivedItems(metadata: any): Record<string, boolean> {
+  if (
+    !metadata ||
+    typeof metadata !== "object" ||
+    Array.isArray(metadata) ||
+    !metadata.receivedItems ||
+    typeof metadata.receivedItems !== "object" ||
+    Array.isArray(metadata.receivedItems)
+  ) {
+    return {};
+  }
+
+  return metadata.receivedItems;
+}
+
+function getMetadataObject(metadata: unknown) {
+  return metadata && typeof metadata === "object" && !Array.isArray(metadata)
+    ? metadata
+    : {};
+}
+
+function withOrderItemFlags<
   T extends {
     orderId: string;
     packageId?: string | number | null;
@@ -51,12 +72,15 @@ function withOrderedFlag<
   metadataByOrderId: Map<string, any>,
 ) {
   const orderedKey = getOrderedItemKey(item);
-  const orderedItems = getOrderedItems(metadataByOrderId.get(item.orderId));
+  const metadata = metadataByOrderId.get(item.orderId);
+  const orderedItems = getOrderedItems(metadata);
+  const receivedItems = getReceivedItems(metadata);
 
   return {
     ...item,
     orderedKey,
     ordered: Boolean(orderedItems[orderedKey]),
+    received: Boolean(receivedItems[orderedKey]),
   };
 }
 
@@ -140,7 +164,7 @@ export async function getExpectedOrderItemsByOrderId(orderId: string) {
     if (dbItems.length > 0) {
       return {
         status: "success",
-        data: dbItems.map((item) => withOrderedFlag(item, metadataByOrderId)),
+        data: dbItems.map((item) => withOrderItemFlags(item, metadataByOrderId)),
       };
     }
 
@@ -218,7 +242,7 @@ export async function getExpectedOrderItemsByOrderId(orderId: string) {
     return {
       status: "success",
       data: expectedItemsToSave.map((item) =>
-        withOrderedFlag(item, metadataByOrderId),
+        withOrderItemFlags(item, metadataByOrderId),
       ),
     };
   } catch (error) {
@@ -252,13 +276,15 @@ export async function updateExpectedOrderItemOrdered({
       return { status: "error", message: "Order not found" };
     }
 
-    const metadata =
-      queue.metadata && typeof queue.metadata === "object" && !Array.isArray(queue.metadata)
-        ? queue.metadata
-        : {};
+    const metadata = getMetadataObject(queue.metadata);
+    const currentReceivedItems = getReceivedItems(metadata);
     const orderedItems = {
       ...getOrderedItems(metadata),
       [orderedKey]: ordered,
+    };
+    const receivedItems = {
+      ...currentReceivedItems,
+      [orderedKey]: false,
     };
 
     await db
@@ -267,6 +293,7 @@ export async function updateExpectedOrderItemOrdered({
         metadata: {
           ...metadata,
           orderedItems,
+          receivedItems,
         },
       })
       .where(eq(beltQueues.orderId, orderId));
@@ -277,6 +304,149 @@ export async function updateExpectedOrderItemOrdered({
   } catch (error) {
     console.error("Error updating ordered item flag:", error);
     return { status: "error", message: "Failed to update item" };
+  }
+}
+
+export async function updateExpectedOrderItemReceived({
+  orderId,
+  orderedKey,
+  received,
+}: {
+  orderId: string;
+  orderedKey: string;
+  received: boolean;
+}) {
+  try {
+    if (!orderId || !orderedKey) {
+      return { status: "error", message: "Order ID and item key are required" };
+    }
+
+    const [queue] = await db
+      .select({
+        metadata: beltQueues.metadata,
+      })
+      .from(beltQueues)
+      .where(eq(beltQueues.orderId, orderId));
+
+    if (!queue) {
+      return { status: "error", message: "Order not found" };
+    }
+
+    const metadata = getMetadataObject(queue.metadata);
+    const orderedItems = getOrderedItems(metadata);
+
+    if (!orderedItems[orderedKey]) {
+      return {
+        status: "error",
+        message: "Item must be marked ordered before it can be received",
+      };
+    }
+
+    const receivedItems = {
+      ...getReceivedItems(metadata),
+      [orderedKey]: received,
+    };
+
+    await db
+      .update(beltQueues)
+      .set({
+        metadata: {
+          ...metadata,
+          receivedItems,
+        },
+      })
+      .where(eq(beltQueues.orderId, orderId));
+
+    revalidatePath("/process-view");
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("Error updating received item flag:", error);
+    return { status: "error", message: "Failed to update item" };
+  }
+}
+
+export async function updateExpectedOrderItemFlags(
+  updates: Array<{
+    orderId: string;
+    orderedKey: string;
+    ordered?: boolean;
+    received?: boolean;
+  }>,
+) {
+  try {
+    const validUpdates = updates.filter(
+      (update) => update.orderId && update.orderedKey,
+    );
+
+    if (validUpdates.length === 0) {
+      return { status: "error", message: "No items to update" };
+    }
+
+    const orderIds = Array.from(
+      new Set(validUpdates.map((update) => update.orderId)),
+    );
+    const queues = await db
+      .select({
+        orderId: beltQueues.orderId,
+        metadata: beltQueues.metadata,
+      })
+      .from(beltQueues)
+      .where(inArray(beltQueues.orderId, orderIds));
+
+    if (queues.length !== orderIds.length) {
+      return { status: "error", message: "One or more orders were not found" };
+    }
+
+    const updatesByOrderId = new Map<string, typeof validUpdates>();
+    for (const update of validUpdates) {
+      const currentUpdates = updatesByOrderId.get(update.orderId) ?? [];
+      currentUpdates.push(update);
+      updatesByOrderId.set(update.orderId, currentUpdates);
+    }
+
+    await db.transaction(async (tx) => {
+      for (const queue of queues) {
+        const metadata = getMetadataObject(queue.metadata);
+        const orderedItems = { ...getOrderedItems(metadata) };
+        const receivedItems = { ...getReceivedItems(metadata) };
+
+        for (const update of updatesByOrderId.get(queue.orderId) ?? []) {
+          if (typeof update.ordered === "boolean") {
+            orderedItems[update.orderedKey] = update.ordered;
+            receivedItems[update.orderedKey] = false;
+          }
+
+          if (typeof update.received === "boolean") {
+            if (update.received && !orderedItems[update.orderedKey]) {
+              throw new Error(
+                "Item must be marked ordered before it can be received",
+              );
+            }
+
+            receivedItems[update.orderedKey] = update.received;
+          }
+        }
+
+        await tx
+          .update(beltQueues)
+          .set({
+            metadata: {
+              ...metadata,
+              orderedItems,
+              receivedItems,
+            },
+          })
+          .where(eq(beltQueues.orderId, queue.orderId));
+      }
+    });
+
+    revalidatePath("/process-view");
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("Error updating item flags:", error);
+    return { status: "error", message: "Failed to update items" };
   }
 }
 

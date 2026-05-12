@@ -15,6 +15,7 @@ import {
   Loader2,
   Lock,
   CheckCheck,
+  CircleCheck,
   MoreVertical,
 } from "lucide-react";
 
@@ -466,6 +467,9 @@ export default function ProcessViewData({
                         const allItemsOrdered = rowQueues.every(
                           (q: any) => q.allItemsOrdered,
                         );
+                        const allItemsReceived = rowQueues.every(
+                          (q: any) => q.allItemsReceived,
+                        );
                         return (
                           <TableRow
                             key={queue.id}
@@ -627,12 +631,20 @@ export default function ProcessViewData({
                             <TableCell className="align-middle px-4 py-3 min-w-[165px]">
                               <div className="flex flex-col items-start gap-2">
                                 <Status status={queue.status} />
-                                {allItemsOrdered && (
-                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-linear-to-r from-emerald-500/15 to-green-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:text-emerald-300">
-                                    <CheckCheck className="h-3.5 w-3.5" />
-                                    Ordered
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                  {allItemsOrdered && (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                      <CheckCheck className="h-3 w-3" />
+                                      Ordered
+                                    </span>
+                                  )}
+                                  {allItemsReceived && (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-sky-700 shadow-sm ring-1 ring-sky-500/10 dark:bg-sky-500/15 dark:text-sky-300">
+                                      <CircleCheck className="h-3 w-3" />
+                                      Received
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </TableCell>
                             <TableCell className="align-middle px-4 py-3 min-w-[240px] max-w-[240px]">
@@ -749,6 +761,9 @@ export default function ProcessViewData({
                 const rowQueues = [queue, ...row.groupMembers];
                 const allItemsOrdered = rowQueues.every(
                   (q: any) => q.allItemsOrdered,
+                );
+                const allItemsReceived = rowQueues.every(
+                  (q: any) => q.allItemsReceived,
                 );
                 return (
                   <Card
@@ -923,12 +938,20 @@ export default function ProcessViewData({
                               className={`transition-transform ${isExpanded[queue.id] ? "rotate-180" : ""}`}
                             />
                           </div>
-                          {allItemsOrdered && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-linear-to-r from-emerald-500/15 to-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:text-emerald-300">
-                              <CheckCheck className="h-3 w-3" />
-                              Ordered
-                            </span>
-                          )}
+                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                            {allItemsOrdered && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:bg-emerald-500/15 dark:text-emerald-300">
+                                <CheckCheck className="h-3 w-3" />
+                                Ordered
+                              </span>
+                            )}
+                            {allItemsReceived && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-700 shadow-sm ring-1 ring-sky-500/10 dark:bg-sky-500/15 dark:text-sky-300">
+                                <CircleCheck className="h-3 w-3" />
+                                Received
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
