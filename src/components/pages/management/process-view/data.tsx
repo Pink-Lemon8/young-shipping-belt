@@ -15,7 +15,6 @@ import {
   Loader2,
   Lock,
   CheckCheck,
-  CircleCheck,
   MoreVertical,
 } from "lucide-react";
 
@@ -59,6 +58,10 @@ import { UpdateLymlightStatusDialog } from "./update-lymlight-status/dialog";
 import { ViewItemsDialog } from "./view-items/dialog";
 import { UploadStageImageDialog } from "./upload-stage-image/dialog";
 import { ImagePlus, Pill } from "lucide-react";
+import {
+  OrderedMetadataBadge,
+  ReceivedMetadataBadge,
+} from "./metadata-item-badges";
 
 type ProcessViewDataProps = {
   queues?: any[];
@@ -631,20 +634,16 @@ export default function ProcessViewData({
                             <TableCell className="align-middle px-4 py-3 min-w-[165px]">
                               <div className="flex flex-col items-start gap-2">
                                 <Status status={queue.status} />
-                                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                  {allItemsOrdered && (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:bg-emerald-500/15 dark:text-emerald-300">
-                                      <CheckCheck className="h-3 w-3" />
-                                      Ordered
-                                    </span>
-                                  )}
-                                  {allItemsReceived && (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-sky-700 shadow-sm ring-1 ring-sky-500/10 dark:bg-sky-500/15 dark:text-sky-300">
-                                      <CircleCheck className="h-3 w-3" />
-                                      Received
-                                    </span>
-                                  )}
-                                </div>
+                                {(allItemsOrdered || allItemsReceived) && (
+                                  <div className="flex flex-row flex-nowrap items-center gap-1.5">
+                                    {allItemsOrdered && (
+                                      <OrderedMetadataBadge tooltip="All items are marked as ordered." />
+                                    )}
+                                    {allItemsReceived && (
+                                      <ReceivedMetadataBadge tooltip="All items are marked as received." />
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="align-middle px-4 py-3 min-w-[240px] max-w-[240px]">
@@ -940,28 +939,18 @@ export default function ProcessViewData({
                             </span>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <Status status={queue.status} />
-                            <ChevronDown
-                              size={16}
-                              className={`transition-transform ${isExpanded[queue.id] ? "rotate-180" : ""}`}
-                            />
-                          </div>
-                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                            {allItemsOrdered && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-500/10 dark:bg-emerald-500/15 dark:text-emerald-300">
-                                <CheckCheck className="h-3 w-3" />
-                                Ordered
-                              </span>
-                            )}
-                            {allItemsReceived && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-700 shadow-sm ring-1 ring-sky-500/10 dark:bg-sky-500/15 dark:text-sky-300">
-                                <CircleCheck className="h-3 w-3" />
-                                Received
-                              </span>
-                            )}
-                          </div>
+                        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1.5">
+                          <Status status={queue.status} />
+                          {allItemsOrdered && (
+                            <OrderedMetadataBadge tooltip="All expected items marked ordered" />
+                          )}
+                          {allItemsReceived && (
+                            <ReceivedMetadataBadge tooltip="All expected items marked received" />
+                          )}
+                          <ChevronDown
+                            size={16}
+                            className={`shrink-0 transition-transform ${isExpanded[queue.id] ? "rotate-180" : ""}`}
+                          />
                         </div>
                       </div>
                     </div>
@@ -1005,7 +994,7 @@ export default function ProcessViewData({
                                   style={{
                                     width:
                                       queue.shippedAt ||
-                                      queue.status === "COMPLETED"
+                                        queue.status === "COMPLETED"
                                         ? "100%"
                                         : queue.createdAt
                                           ? "67%"
