@@ -15,7 +15,7 @@ export default function ManagementHeader() {
           <div>
             <Link href="/dashboard">
               <h1 className="text-base sm:text-xl font-bold text-foreground">
-                YY Shipping Belt
+                Young Shipping Belt
               </h1>
             </Link>
             <p className="text-xs text-muted-foreground">

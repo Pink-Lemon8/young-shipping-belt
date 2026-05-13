@@ -31,12 +31,12 @@ export function SignInCard({ className }: SignInCardProps) {
         <CardTitle className="text-2xl flex items-center gap-2">
           <Image
             src="/images/logo.png"
-            alt="YY Shipping Belt"
+            alt="Young Shipping Belt"
             width={48}
             height={48}
             className="rounded-md"
           />
-          YY Shipping Belt
+          Young Shipping Belt
         </CardTitle>
         <CardDescription className="text-foreground/50">
           Sign in to your account

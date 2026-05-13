@@ -30,7 +30,6 @@ import PageNumber from "@/components/common/pagination-page";
 import Search from "@/components/pages/management/process-view/search";
 import { Status } from "@/components/pages/management/process-view/status";
 import { cn, formatDate } from "@/lib/utils";
-import { CvBadge } from "@/components/common/cv-badge";
 import { FileList } from "@/components/pages/pharmacist-review/data/file-list";
 import { beltQueueStatusTypes } from "@/db/schema";
 import {
@@ -106,8 +105,8 @@ const STATUS_OPTIONS = [
 
 const CV_OPTIONS = [
   { label: "All orders", value: "all" },
-  { label: "YY only", value: "true" },
-  { label: "Non-YY only", value: "false" },
+  { label: "Young only", value: "true" },
+  { label: "Non-Young only", value: "false" },
 ] as const;
 
 export default function OrderListData({
@@ -289,14 +288,14 @@ export default function OrderListData({
                   const isGroup = row.groupMembers.length > 0;
                   const orderIdsInGroup = isGroup
                     ? [
-                        queue.orderId,
-                        ...row.groupMembers.map((member: any) => member.orderId),
-                      ]
+                      queue.orderId,
+                      ...row.groupMembers.map((member: any) => member.orderId),
+                    ]
                     : [];
                   const orderIdsForTooltip =
                     isGroup &&
-                    queue.groupId != null &&
-                    groupIdToOrderIds[queue.groupId]?.length
+                      queue.groupId != null &&
+                      groupIdToOrderIds[queue.groupId]?.length
                       ? groupIdToOrderIds[queue.groupId]
                       : orderIdsInGroup;
 
@@ -330,32 +329,29 @@ export default function OrderListData({
                         "border-border/40 transition-colors",
                         isGroup && "bg-amber-500/5 dark:bg-amber-700/10",
                         queue.status === "PENDING" &&
-                          "bg-emerald-50/60 dark:bg-emerald-900/10",
+                        "bg-emerald-50/60 dark:bg-emerald-900/10",
                       )}
                     >
                       <TableCell className="font-medium px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <CvBadge isCv={queue.isCv} />
-                          {isGroup ? (
-                            <TooltipProvider delayDuration={0}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="cursor-help truncate">
-                                    G-{queue.groupId}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="right">
-                                  <p className="font-medium">Order IDs</p>
-                                  <p className="text-sm break-all">
-                                    {orderIdsForTooltip.join(", ")}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <span>{queue.fullOrderId ?? queue.orderId}</span>
-                          )}
-                        </div>
+                        {isGroup ? (
+                          <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help truncate">
+                                  G-{queue.groupId}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                <p className="font-medium">Order IDs</p>
+                                <p className="text-sm break-all">
+                                  {orderIdsForTooltip.join(", ")}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span>{queue.fullOrderId ?? queue.orderId}</span>
+                        )}
                       </TableCell>
 
                       <TableCell className="px-4 py-3 text-muted-foreground">
@@ -390,7 +386,7 @@ export default function OrderListData({
                       </TableCell>
 
                       <TableCell className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDate(queue.createdAt)}
+                        {formatDate(queue.createdAt) || "N/A"}
                       </TableCell>
                     </TableRow>
                   );
@@ -441,7 +437,7 @@ export default function OrderListData({
                     "border border-border/50 shadow-sm",
                     isGroup && "border-amber-500/30 bg-amber-500/5",
                     queue.status === "PENDING" &&
-                      "border-emerald-500/30 bg-emerald-50/40",
+                    "border-emerald-500/30 bg-emerald-50/40",
                   )}
                 >
                   <CardContent className="p-4 space-y-3">
@@ -450,8 +446,7 @@ export default function OrderListData({
                         <div className="text-xs text-muted-foreground">
                           Order
                         </div>
-                        <div className="font-semibold truncate flex items-center gap-2">
-                          <CvBadge isCv={queue.isCv} />
+                        <div className="font-semibold truncate">
                           {isGroup
                             ? `G-${queue.groupId}`
                             : (queue.fullOrderId ?? queue.orderId)}
@@ -486,7 +481,7 @@ export default function OrderListData({
                         <span className="text-muted-foreground">
                           Sent to Belt:{" "}
                         </span>
-                        <span>{formatDate(queue.createdAt)}</span>
+                        <span>{formatDate(queue.createdAt) || "N/A"}</span>
                       </div>
                     </div>
 

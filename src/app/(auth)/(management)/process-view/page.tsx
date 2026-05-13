@@ -63,7 +63,7 @@ async function ProcessViewDataWrapper({
   const filter = await searchParams;
 
   const search = filter.search;
-  const beltCode = "C";//filter.beltCode || "C";
+  const beltCode = "C";
   const status = filter.status;
   const pharmacistReviewStatus = filter.pharmacistReviewStatus;
   const page = filter.page ? Number(filter.page) : 1;

@@ -241,7 +241,9 @@ export default function ProcessViewInfoData({
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Label Created</dt>
                 <dd className="font-medium">
-                  {formatDate(queue.labelCreatedAt) || "N/A"}
+                  {queue.labelCreatedAt
+                    ? formatDate(queue.labelCreatedAt)
+                    : "N/A"}
                 </dd>
               </div>
               {queue.BoxSize && (
@@ -485,13 +487,21 @@ export default function ProcessViewInfoData({
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Label Created At</dt>
                   <dd className="font-medium">
-                    {formatDate(queue.labelCreatedAt) || "N/A"}
+                    {queue.labelCreatedAt
+                      ? formatDate(queue.labelCreatedAt)
+                      : "N/A"}
                   </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Sent To Belt At</dt>
                   <dd className="font-medium">
-                    {formatDate(queue.createdAt) || "N/A"}
+                    {queue.createdAt ? formatDate(queue.createdAt) : "N/A"}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Shipped At</dt>
+                  <dd className="font-medium">
+                    {queue.shippedAt ? formatDate(queue.shippedAt) : "N/A"}
                   </dd>
                 </div>
                 {queue.lockedAt && (

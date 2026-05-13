@@ -51,7 +51,7 @@ export function ManagementSidebar({
             >
               <Image
                 src="/images/logo.png"
-                alt="YY Shipping Belt"
+                alt="Young Shipping Belt"
                 width={48}
                 height={48}
               />

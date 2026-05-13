@@ -17,11 +17,18 @@ export function slugify(str: string) {
 }
 
 export function formatDate(
-  date: Date,
+  date: Date | string | number | null | undefined,
   timezone: string = "UTC",
   format: string = "dd MMM yyyy, hh:mm a"
-) {
-  return formatInTimeZone(date, timezone, format);
+): string {
+  if (date == null) return "";
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  try {
+    return formatInTimeZone(d, timezone, format);
+  } catch {
+    return "";
+  }
 }
 
 export function measurementString(unit: string) {

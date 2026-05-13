@@ -12,7 +12,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { type DateRange } from "react-day-picker";
-import { belts } from "@/lib/const";
 import { beltQueueStatusTypes } from "@/db/schema";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -32,7 +31,8 @@ type ProcessViewFilterProps = {
   setCurrentPage?: React.Dispatch<React.SetStateAction<number>>;
 };
 
-const DEFAULT_BELT_CODE = "C";
+/** Process view is fixed to belt C (matches server `process-view/page.tsx`). */
+const FIXED_BELT_CODE = "C";
 
 export default function ProcessViewFilter({
   loading,
@@ -41,13 +41,6 @@ export default function ProcessViewFilter({
   setCurrentPage,
 }: ProcessViewFilterProps) {
   const searchParams = useSearchParams();
-  const beltCodeParam = searchParams.get("beltCode");
-
-  const [beltCode, setBeltCode] = useState(
-    beltCodeParam && belts.includes(beltCodeParam)
-      ? beltCodeParam
-      : DEFAULT_BELT_CODE,
-  );
 
   const [status, setStatus] = useState(searchParams.get("status") || "ANY");
 
@@ -101,7 +94,7 @@ export default function ProcessViewFilter({
 
   const applyFilters = () => {
     updateUrlParams({
-      beltCode,
+      beltCode: FIXED_BELT_CODE,
       status: status === "ANY" ? undefined : status,
       page: "1",
       isSkipped: isSkipped ? isSkipped.toString() : undefined,
@@ -117,7 +110,6 @@ export default function ProcessViewFilter({
   };
 
   const clearFilters = () => {
-    setBeltCode(DEFAULT_BELT_CODE);
     setStatus("ANY");
     setIsSkipped(false);
     setIsLocked(false);
@@ -127,7 +119,7 @@ export default function ProcessViewFilter({
     setShipDateTo(undefined);
     setCurrentPage?.(1);
     updateUrlParams({
-      beltCode: DEFAULT_BELT_CODE,
+      beltCode: FIXED_BELT_CODE,
       status: undefined,
       page: "1",
       isSkipped: undefined,
@@ -140,7 +132,6 @@ export default function ProcessViewFilter({
   };
 
   const activeFilterCount = [
-    beltCode !== DEFAULT_BELT_CODE,
     status !== "ANY",
     isSkipped,
     isLocked,
@@ -177,38 +168,14 @@ export default function ProcessViewFilter({
   useEffect(() => {
     setLoading?.(true);
     applyFilters();
-  }, [beltCode, status, isSkipped, isLocked, reviewCountLessThan, reviewCountLessThanValue, shipDateFrom, shipDateTo]);
+  }, [status, isSkipped, isLocked, reviewCountLessThan, reviewCountLessThanValue, shipDateFrom, shipDateTo]);
 
   return (
     <Card className="border border-border/80 bg-card shadow-sm rounded-lg overflow-hidden w-full min-w-0">
       <CardContent className="p-3 sm:p-4 md:py-4 md:px-5 lg:px-6">
         <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end md:gap-x-4 md:gap-y-4 lg:gap-x-5">
-          {/* Primary filters: Belt, Status, Ship date — responsive grid on small, row on md+ */}
+          {/* Primary filters: Status, Ship date — belt fixed to C */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 md:flex md:flex-wrap md:items-end md:gap-x-4 md:gap-y-0 lg:gap-x-5 min-w-0">
-            <div className="space-y-1.5 min-w-0 w-full md:w-[128px] lg:w-[132px]">
-              <Label
-                htmlFor="filter-belt"
-                className="text-xs font-medium text-muted-foreground tracking-tight"
-              >
-                Belt
-              </Label>
-              <Select value={beltCode} onValueChange={setBeltCode}>
-                <SelectTrigger
-                  id="filter-belt"
-                  className="h-9 sm:h-9 w-full min-w-0 border-input/80 bg-background font-medium touch-manipulation"
-                >
-                  <SelectValue placeholder="Belt" />
-                </SelectTrigger>
-                <SelectContent>
-                  {belts.map((code) => (
-                    <SelectItem key={code} value={code}>
-                      Belt {code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="space-y-1.5 min-w-0 w-full md:w-[168px] lg:w-[180px]">
               <Label
                 htmlFor="filter-status"

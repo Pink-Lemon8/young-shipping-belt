@@ -6,8 +6,8 @@ import { redirect } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "YY Shipping Belt - Forgot Password",
-  description: "YY Shipping Belt",
+  title: "Young Shipping Belt - Forgot Password",
+  description: "Young Shipping Belt",
 };
 
 function LoadingFallback() {

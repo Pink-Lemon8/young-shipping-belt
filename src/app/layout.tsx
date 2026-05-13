@@ -17,21 +17,24 @@ export const metadata: Metadata = {
         ? `https://${process.env.VERCEL_URL}`
         : `http://localhost:${process.env.PORT || 3000}`
   ),
-  title: "YY Shipping Belt",
-  description: "YY Shipping Belt",
+  icons: {
+    icon: [{ url: "/favicon.ico", type: "image/x-icon", sizes: "any" }],
+  },
+  title: "Young Shipping Belt",
+  description: "Young Shipping Belt",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     url: "/",
-    title: "YY Shipping Belt",
-    description: "YY Shipping Belt",
+    title: "Young Shipping Belt",
+    description: "Young Shipping Belt",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "YY Shipping Belt",
-    description: "YY Shipping Belt",
+    title: "Young Shipping Belt",
+    description: "Young Shipping Belt",
   },
 };
 

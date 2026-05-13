@@ -692,15 +692,25 @@ export default function ProcessViewData({
                               )}
                             </TableCell>
                             <TableCell className="align-middle px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                              {formatDate(queue.labelCreatedAt)}
+                              {queue.labelCreatedAt ? (
+                                formatDate(queue.labelCreatedAt)
+                              ) : (
+                                <span className="opacity-60">N/A</span>
+                              )}
                             </TableCell>
                             <TableCell className="align-middle px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                              {formatDate(queue.createdAt)}
+                              {queue.createdAt ? (
+                                formatDate(queue.createdAt)
+                              ) : (
+                                <span className="opacity-60">N/A</span>
+                              )}
                             </TableCell>
                             <TableCell className="align-middle px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                              {queue.shippedAt
-                                ? formatDate(queue.shippedAt)
-                                : "N/A"}
+                              {queue.shippedAt ? (
+                                formatDate(queue.shippedAt)
+                              ) : (
+                                <span className="opacity-60">N/A</span>
+                              )}
                             </TableCell>
                             <TableCell className="align-middle px-4 py-3 text-right">
                               <div className="flex justify-end gap-1">
@@ -978,16 +988,14 @@ export default function ProcessViewData({
                                   {queue.createdAt ? formatDate(queue.createdAt) : <span className="opacity-60">N/A</span>}
                                 </div>
                               </div>
-                              {queue.status === "COMPLETED" && (
-                                <div className="flex flex-col items-center flex-1">
-                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-                                    Shipped At
-                                  </div>
-                                  <div className="bg-muted/80 rounded px-2 py-1 text-xs font-medium text-primary shadow-inner min-w-24 text-center">
-                                    {queue.shippedAt ? formatDate(queue.shippedAt) : <span className="opacity-60">N/A</span>}
-                                  </div>
+                              <div className="flex flex-col items-center flex-1">
+                                <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                                  Shipped At
                                 </div>
-                              )}
+                                <div className="bg-muted/80 rounded px-2 py-1 text-xs font-medium text-primary shadow-inner min-w-24 text-center">
+                                  {queue.shippedAt ? formatDate(queue.shippedAt) : <span className="opacity-60">N/A</span>}
+                                </div>
+                              </div>
                             </div>
                             {/* Horizontal Progress Bar */}
                             <div className="flex items-center justify-between mt-2 px-4 md:px-8">
@@ -995,13 +1003,15 @@ export default function ProcessViewData({
                                 <div
                                   className="absolute top-0 left-0 h-2 bg-primary transition-all"
                                   style={{
-                                    width: queue.shippedAt
-                                      ? "100%"
-                                      : queue.createdAt
-                                        ? "67%"
-                                        : queue.labelCreatedAt
-                                          ? "33%"
-                                          : "0%",
+                                    width:
+                                      queue.shippedAt ||
+                                      queue.status === "COMPLETED"
+                                        ? "100%"
+                                        : queue.createdAt
+                                          ? "67%"
+                                          : queue.labelCreatedAt
+                                            ? "33%"
+                                            : "0%",
                                   }}
                                 />
                               </div>
