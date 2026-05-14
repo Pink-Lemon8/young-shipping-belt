@@ -126,7 +126,7 @@ export function OrderInfo({
                     onClick={handlePushQueue}
                     className="gap-2 bg-green-600 hover:bg-green-700 cursor-pointer text-white hover:text-white"
                   >
-                    Send to Cage
+                    Complete Order
                     <ChevronRightIcon className="ml-2 min-h-5 min-w-5" />
                   </Button>
                 </>

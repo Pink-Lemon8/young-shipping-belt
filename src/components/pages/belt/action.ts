@@ -1018,7 +1018,7 @@ export async function pushQueueCompleted(
     return {
       status: "success",
       messages: [
-        `Order ${orderId}${groupOrderIds && groupOrderIds.length > 0 ? ` and ${groupOrderIds.join(", ")}` : ""} completed in cage ${cageCode}`,
+        `Order ${orderId}${groupOrderIds && groupOrderIds.length > 0 ? ` and ${groupOrderIds.join(", ")}` : ""} completed`,
       ],
     } as Result;
   } catch (error) {

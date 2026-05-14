@@ -7,7 +7,6 @@ import { pushQueueCompleted } from "../action";
 import { useToast } from "@/components/hooks/use-toast";
 import { OrderInfo } from "./data/info";
 import { FileList } from "../data/file-list";
-import SelectCageModel from "./select-cage/model";
 import { base64ToBlob } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Result } from "@/lib/types";
@@ -20,11 +19,15 @@ const WebcamLoadingSkeleton = () => (
   </div>
 );
 
+/** Stage 3 completion always assigns cage 1 (no cage picker UI). */
+const STAGE3_AUTO_CAGE_CODE = "1";
+
 const TakePictureAndShow = dynamic(
   () =>
     import("../data/take-picture-and-show").then((m) => m.TakePictureAndShow),
   { ssr: false, loading: WebcamLoadingSkeleton },
 );
+
 export default function BeltStage3Data({
   data = {},
   process = {},
@@ -41,11 +44,6 @@ export default function BeltStage3Data({
   const [takePicture, setTakePicture] = useState(false);
   const [image, setImage] = useState<string | undefined>(undefined);
 
-  const [selectedCage, setSelectedCage] = useState<number | undefined>(
-    undefined,
-  );
-  const [openSelectCage, setOpenSelectCage] = useState(false);
-
   const [errorResult, setErrorResult] = useState<Result | undefined>(undefined);
 
   const { toast } = useToast();
@@ -56,14 +54,6 @@ export default function BeltStage3Data({
   };
 
   const handlePushQueue = async () => {
-    if (selectedCage === undefined) {
-      toast({
-        title: "Error",
-        variant: "destructive",
-        description: "Please select a cage",
-      });
-      return;
-    }
     setLoading?.(true);
 
     const imageBase64 = image?.split(",")[1];
@@ -75,13 +65,13 @@ export default function BeltStage3Data({
       process?.orderId ?? "",
       groupedProcess?.map((q: any) => q.orderId),
       formData,
-      selectedCage.toString(),
+      STAGE3_AUTO_CAGE_CODE,
     );
     if (res?.status === "success") {
       setResult(res);
       toast({
         title: "Success",
-        description: res?.messages?.join(", ") ?? "Order sent to cage",
+        description: res?.messages?.join(", ") ?? "Order completed",
       });
       const url = new URL(window.location.href);
       const hasQuery = url.search.length > 0;
@@ -95,9 +85,8 @@ export default function BeltStage3Data({
         title: "Error",
         variant: "destructive",
         description:
-          res?.messages?.join(", ") ?? "Failed to send order to cage",
+          res?.messages?.join(", ") ?? "Failed to complete order",
       });
-      setOpenSelectCage(false);
     }
     setLoading?.(false);
   };
@@ -108,15 +97,6 @@ export default function BeltStage3Data({
 
   return (
     <div className="container mx-auto max-w-7xl">
-      <SelectCageModel
-        loading={loading}
-        selectedCage={selectedCage}
-        setSelectedCage={setSelectedCage}
-        open={openSelectCage}
-        setOpen={setOpenSelectCage}
-        onPushQueue={handlePushQueue}
-      />
-
       {!loading && (
         <div className="grid lg:grid-cols-2 gap-6">
           <OrderInfo
@@ -125,7 +105,7 @@ export default function BeltStage3Data({
             groupedProcess={groupedProcess}
             takePicture={takePicture}
             setTakePicture={setTakePicture}
-            handlePushQueue={() => setOpenSelectCage(true)}
+            handlePushQueue={handlePushQueue}
           />
           <div className="space-y-6">
             <TakePictureAndShow
