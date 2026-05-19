@@ -293,6 +293,7 @@ export async function getQueueByBeltCodeInProcessView(
           like(beltQueues.orderId, `%${filter.search}%`),
           like(beltQueues.patientId, `%${filter.search}%`),
           like(beltQueues.trackingNumber, `%${filter.search}%`),
+          like(beltQueues.patientName, `%${filter.search}%`),
         )
         : undefined,
       filter.isSkipped ? eq(beltQueues.skipped, filter.isSkipped) : undefined,
@@ -386,6 +387,7 @@ export async function getQueueByBeltCodeInProcessView(
                   like(queue.orderId, `%${filter.search}%`),
                   like(queue.patientId, `%${filter.search}%`),
                   like(queue.trackingNumber, `%${filter.search}%`),
+                  like(queue.patientName, `%${filter.search}%`),
                 )
                 : undefined,
               filter.isSkipped

@@ -365,7 +365,7 @@ export default function ProcessViewData({
                 setSearchText={setSearch}
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
-                placeholder="Search by Order ID, Patient ID, or Tracking Number"
+                placeholder="Search by Order ID, Patient ID/Name, or Tracking Number"
               />
             </div>
             <div className="flex gap-2 items-center justify-center sm:justify-start">
