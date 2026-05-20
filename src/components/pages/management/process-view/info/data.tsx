@@ -452,12 +452,9 @@ export default function ProcessViewInfoData({
               Items & Lots
             </TabsTrigger>
           )}
-          {(queue.files && queue.files.length > 0) ||
-            (queue.label && queue.label.length > 0) ? (
-            <TabsTrigger value="files" className="flex-1 basis-[calc(50%-0.25rem)] md:basis-auto text-xs md:text-sm px-2 md:px-3 py-1.5">
-              Files
-            </TabsTrigger>
-          ) : undefined}
+          <TabsTrigger value="files" className="flex-1 basis-[calc(50%-0.25rem)] md:basis-auto text-xs md:text-sm px-2 md:px-3 py-1.5">
+            Files
+          </TabsTrigger>
           {queue.images && queue.images.length > 0 && (
             <TabsTrigger value="images" className="flex-1 basis-[calc(50%-0.25rem)] md:basis-auto text-xs md:text-sm px-2 md:px-3 py-1.5">
               Images
@@ -616,31 +613,29 @@ export default function ProcessViewInfoData({
           </TabsContent>
         )}
 
-        {(queue.files && queue.files.length > 0) ||
-          (queue.label && queue.label.length > 0) ? (
-          <TabsContent value="files">
-            <div className="flex justify-end">
-              <Button
-                onClick={() => setUploadExtraFileOpen(true)}
-                variant="outline"
-                className="mb-4"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+        <TabsContent value="files">
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setUploadExtraFileOpen(true)}
+              variant="outline"
+              className="mb-4"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
 
-            <FileList
-              files={[
-                ...(queue.label || []),
-                ...(queue.files || []),
-                ...(queue.extraFiles || []),
-                ...(groupedQueues?.flatMap((group: any) => group.extraFiles) ??
-                  []),
-              ]}
-              orderId={queue.orderId}
-            />
-          </TabsContent>
-        ) : undefined}
+          <FileList
+            files={[
+              ...(queue?.label || []),
+              ...(queue?.files || []),
+              ...(queue?.extraFiles || []),
+              ...(groupedQueues?.flatMap((group: any) => group.extraFiles) ??
+                []),
+              ...(queue?.cvFiles || []),
+            ]}
+            orderId={queue?.orderId}
+          />
+        </TabsContent>
 
         {queue.images && queue.images.length > 0 && (
           <TabsContent value="images">
