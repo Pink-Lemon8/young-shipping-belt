@@ -23,6 +23,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  parseProcessViewItemStatus,
+  processViewItemStatusOptions,
+} from "@/lib/process-view-item-status";
 
 type ProcessViewFilterProps = {
   loading?: boolean;
@@ -43,6 +47,9 @@ export default function ProcessViewFilter({
   const searchParams = useSearchParams();
 
   const [status, setStatus] = useState(searchParams.get("status") || "ANY");
+  const [itemStatus, setItemStatus] = useState(() =>
+    parseProcessViewItemStatus(searchParams.get("itemStatus")),
+  );
 
   const [isSkipped, setIsSkipped] = useState(
     searchParams.get("isSkipped") === "true" || false,
@@ -96,6 +103,7 @@ export default function ProcessViewFilter({
     updateUrlParams({
       beltCode: FIXED_BELT_CODE,
       status: status === "ANY" ? undefined : status,
+      itemStatus: itemStatus === "ANY" ? undefined : itemStatus,
       page: "1",
       isSkipped: isSkipped ? isSkipped.toString() : undefined,
       isLocked: isLocked ? isLocked.toString() : undefined,
@@ -111,6 +119,7 @@ export default function ProcessViewFilter({
 
   const clearFilters = () => {
     setStatus("ANY");
+    setItemStatus("ANY");
     setIsSkipped(false);
     setIsLocked(false);
     setReviewCountLessThan(false);
@@ -121,6 +130,7 @@ export default function ProcessViewFilter({
     updateUrlParams({
       beltCode: FIXED_BELT_CODE,
       status: undefined,
+      itemStatus: undefined,
       page: "1",
       isSkipped: undefined,
       isLocked: undefined,
@@ -133,6 +143,7 @@ export default function ProcessViewFilter({
 
   const activeFilterCount = [
     status !== "ANY",
+    itemStatus !== "ANY",
     isSkipped,
     isLocked,
     reviewCountLessThan,
@@ -148,6 +159,7 @@ export default function ProcessViewFilter({
   useEffect(() => {
     setShipDateFrom(parseDate(searchParams.get("shipDateFrom")));
     setShipDateTo(parseDate(searchParams.get("shipDateTo")));
+    setItemStatus(parseProcessViewItemStatus(searchParams.get("itemStatus")));
     const rcLt = searchParams.get("reviewCountLessThan") === "true";
     const rawVal = searchParams.get("reviewCountLessThanValue");
     setReviewCountLessThan(rcLt);
@@ -161,6 +173,7 @@ export default function ProcessViewFilter({
   }, [
     searchParams.get("shipDateFrom"),
     searchParams.get("shipDateTo"),
+    searchParams.get("itemStatus"),
     searchParams.get("reviewCountLessThan"),
     searchParams.get("reviewCountLessThanValue"),
   ]);
@@ -168,7 +181,7 @@ export default function ProcessViewFilter({
   useEffect(() => {
     setLoading?.(true);
     applyFilters();
-  }, [status, isSkipped, isLocked, reviewCountLessThan, reviewCountLessThanValue, shipDateFrom, shipDateTo]);
+  }, [status, itemStatus, isSkipped, isLocked, reviewCountLessThan, reviewCountLessThanValue, shipDateFrom, shipDateTo]);
 
   return (
     <Card className="border border-border/80 bg-card shadow-sm rounded-lg overflow-hidden w-full min-w-0">
@@ -204,6 +217,38 @@ export default function ProcessViewFilter({
                   {beltQueueStatusTypes.map((statusType) => (
                     <SelectItem key={statusType} value={statusType}>
                       {statusType.replace(/_/g, " ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5 min-w-0 w-full md:w-[180px] lg:w-[200px]">
+              <Label
+                htmlFor="filter-item-status"
+                className="text-xs font-medium text-muted-foreground tracking-tight"
+              >
+                Item status
+              </Label>
+              <Select
+                value={itemStatus}
+                onValueChange={(value) =>
+                  setItemStatus(parseProcessViewItemStatus(value))
+                }
+              >
+                <SelectTrigger
+                  id="filter-item-status"
+                  className={cn(
+                    "h-9 w-full min-w-0 border-input/80 bg-background font-medium touch-manipulation",
+                    itemStatus !== "ANY" && activeFilterRing,
+                  )}
+                >
+                  <SelectValue placeholder="Any item status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {processViewItemStatusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

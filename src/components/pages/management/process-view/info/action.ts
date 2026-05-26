@@ -38,6 +38,21 @@ function getOrderedItems(metadata: any): Record<string, boolean> {
   return metadata.orderedItems;
 }
 
+function getSpecialItems(metadata: any): Record<string, boolean> {
+  if (
+    !metadata ||
+    typeof metadata !== "object" ||
+    Array.isArray(metadata) ||
+    !metadata.specialItems ||
+    typeof metadata.specialItems !== "object" ||
+    Array.isArray(metadata.specialItems)
+  ) {
+    return {};
+  }
+
+  return metadata.specialItems;
+}
+
 function getReceivedItems(metadata: any): Record<string, boolean> {
   if (
     !metadata ||
@@ -74,12 +89,16 @@ function withOrderItemFlags<
   const orderedKey = getOrderedItemKey(item);
   const metadata = metadataByOrderId.get(item.orderId);
   const orderedItems = getOrderedItems(metadata);
+  const specialItems = getSpecialItems(metadata);
   const receivedItems = getReceivedItems(metadata);
+  const rawOrdered = Boolean(orderedItems[orderedKey]);
+  const rawSpecial = Boolean(specialItems[orderedKey]);
 
   return {
     ...item,
     orderedKey,
-    ordered: Boolean(orderedItems[orderedKey]),
+    ordered: rawOrdered,
+    special: rawSpecial && !rawOrdered,
     received: Boolean(receivedItems[orderedKey]),
   };
 }
@@ -278,9 +297,14 @@ export async function updateExpectedOrderItemOrdered({
 
     const metadata = getMetadataObject(queue.metadata);
     const currentReceivedItems = getReceivedItems(metadata);
+    const currentSpecialItems = getSpecialItems(metadata);
     const orderedItems = {
       ...getOrderedItems(metadata),
       [orderedKey]: ordered,
+    };
+    const specialItems = {
+      ...currentSpecialItems,
+      [orderedKey]: ordered ? false : Boolean(currentSpecialItems[orderedKey]),
     };
     const receivedItems = {
       ...currentReceivedItems,
@@ -293,6 +317,7 @@ export async function updateExpectedOrderItemOrdered({
         metadata: {
           ...metadata,
           orderedItems,
+          specialItems,
           receivedItems,
         },
       })
@@ -303,6 +328,67 @@ export async function updateExpectedOrderItemOrdered({
     return { status: "success" };
   } catch (error) {
     console.error("Error updating ordered item flag:", error);
+    return { status: "error", message: "Failed to update item" };
+  }
+}
+
+export async function updateExpectedOrderItemSpecial({
+  orderId,
+  orderedKey,
+  special,
+}: {
+  orderId: string;
+  orderedKey: string;
+  special: boolean;
+}) {
+  try {
+    if (!orderId || !orderedKey) {
+      return { status: "error", message: "Order ID and item key are required" };
+    }
+
+    const [queue] = await db
+      .select({
+        metadata: beltQueues.metadata,
+      })
+      .from(beltQueues)
+      .where(eq(beltQueues.orderId, orderId));
+
+    if (!queue) {
+      return { status: "error", message: "Order not found" };
+    }
+
+    const metadata = getMetadataObject(queue.metadata);
+    const currentOrderedItems = getOrderedItems(metadata);
+    const orderedItems = {
+      ...currentOrderedItems,
+      [orderedKey]: special ? false : Boolean(currentOrderedItems[orderedKey]),
+    };
+    const specialItems = {
+      ...getSpecialItems(metadata),
+      [orderedKey]: special,
+    };
+    const receivedItems = {
+      ...getReceivedItems(metadata),
+      [orderedKey]: false,
+    };
+
+    await db
+      .update(beltQueues)
+      .set({
+        metadata: {
+          ...metadata,
+          orderedItems,
+          specialItems,
+          receivedItems,
+        },
+      })
+      .where(eq(beltQueues.orderId, orderId));
+
+    revalidatePath("/process-view");
+
+    return { status: "success" };
+  } catch (error) {
+    console.error("Error updating special item flag:", error);
     return { status: "error", message: "Failed to update item" };
   }
 }
@@ -334,11 +420,12 @@ export async function updateExpectedOrderItemReceived({
 
     const metadata = getMetadataObject(queue.metadata);
     const orderedItems = getOrderedItems(metadata);
+    const specialItems = getSpecialItems(metadata);
 
-    if (!orderedItems[orderedKey]) {
+    if (!orderedItems[orderedKey] && !specialItems[orderedKey]) {
       return {
         status: "error",
-        message: "Item must be marked ordered before it can be received",
+        message: "Item must be marked ordered or special before it can be received",
       };
     }
 
@@ -371,6 +458,7 @@ export async function updateExpectedOrderItemFlags(
     orderId: string;
     orderedKey: string;
     ordered?: boolean;
+    special?: boolean;
     received?: boolean;
   }>,
 ) {
@@ -409,18 +497,34 @@ export async function updateExpectedOrderItemFlags(
       for (const queue of queues) {
         const metadata = getMetadataObject(queue.metadata);
         const orderedItems = { ...getOrderedItems(metadata) };
+        const specialItems = { ...getSpecialItems(metadata) };
         const receivedItems = { ...getReceivedItems(metadata) };
 
         for (const update of updatesByOrderId.get(queue.orderId) ?? []) {
           if (typeof update.ordered === "boolean") {
             orderedItems[update.orderedKey] = update.ordered;
+            if (update.ordered) {
+              specialItems[update.orderedKey] = false;
+            }
+            receivedItems[update.orderedKey] = false;
+          }
+
+          if (typeof update.special === "boolean") {
+            specialItems[update.orderedKey] = update.special;
+            if (update.special) {
+              orderedItems[update.orderedKey] = false;
+            }
             receivedItems[update.orderedKey] = false;
           }
 
           if (typeof update.received === "boolean") {
-            if (update.received && !orderedItems[update.orderedKey]) {
+            if (
+              update.received &&
+              !orderedItems[update.orderedKey] &&
+              !specialItems[update.orderedKey]
+            ) {
               throw new Error(
-                "Item must be marked ordered before it can be received",
+                "Item must be marked ordered or special before it can be received",
               );
             }
 
@@ -434,6 +538,7 @@ export async function updateExpectedOrderItemFlags(
             metadata: {
               ...metadata,
               orderedItems,
+              specialItems,
               receivedItems,
             },
           })

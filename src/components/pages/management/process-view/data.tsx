@@ -61,6 +61,7 @@ import { ImagePlus, Pill } from "lucide-react";
 import {
   OrderedMetadataBadge,
   ReceivedMetadataBadge,
+  SpecialMetadataBadge,
 } from "./metadata-item-badges";
 
 type ProcessViewDataProps = {
@@ -470,6 +471,9 @@ export default function ProcessViewData({
                         const allItemsOrdered = rowQueues.every(
                           (q: any) => q.allItemsOrdered,
                         );
+                        const allItemsSpecial = rowQueues.every(
+                          (q: any) => q.allItemsSpecial,
+                        );
                         const allItemsReceived = rowQueues.every(
                           (q: any) => q.allItemsReceived,
                         );
@@ -634,13 +638,18 @@ export default function ProcessViewData({
                             <TableCell className="align-middle px-4 py-3 min-w-[165px]">
                               <div className="flex flex-col items-start gap-2">
                                 <Status status={queue.status} />
-                                {(allItemsOrdered || allItemsReceived) && (
+                                {(allItemsOrdered ||
+                                  allItemsSpecial ||
+                                  allItemsReceived) && (
                                   <div className="flex flex-row flex-nowrap items-center gap-1.5">
-                                    {allItemsOrdered && (
-                                      <OrderedMetadataBadge tooltip="All items are marked as ordered." />
+                                    {allItemsOrdered && !allItemsSpecial && (
+                                      <OrderedMetadataBadge tooltip="All expected items have prep marked as ordered." />
+                                    )}
+                                    {allItemsSpecial && (
+                                      <SpecialMetadataBadge tooltip="All expected items have prep marked as special." />
                                     )}
                                     {allItemsReceived && (
-                                      <ReceivedMetadataBadge tooltip="All items are marked as received." />
+                                      <ReceivedMetadataBadge tooltip="All expected items are marked as received." />
                                     )}
                                   </div>
                                 )}
@@ -770,6 +779,9 @@ export default function ProcessViewData({
                 const rowQueues = [queue, ...row.groupMembers];
                 const allItemsOrdered = rowQueues.every(
                   (q: any) => q.allItemsOrdered,
+                );
+                const allItemsSpecial = rowQueues.every(
+                  (q: any) => q.allItemsSpecial,
                 );
                 const allItemsReceived = rowQueues.every(
                   (q: any) => q.allItemsReceived,
@@ -941,11 +953,14 @@ export default function ProcessViewData({
                         </div>
                         <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1.5">
                           <Status status={queue.status} />
-                          {allItemsOrdered && (
-                            <OrderedMetadataBadge tooltip="All expected items marked ordered" />
+                          {allItemsOrdered && !allItemsSpecial && (
+                            <OrderedMetadataBadge tooltip="All expected items have prep marked as ordered" />
+                          )}
+                          {allItemsSpecial && (
+                            <SpecialMetadataBadge tooltip="All expected items have prep marked as special" />
                           )}
                           {allItemsReceived && (
-                            <ReceivedMetadataBadge tooltip="All expected items marked received" />
+                            <ReceivedMetadataBadge tooltip="All expected items are marked as received" />
                           )}
                           <ChevronDown
                             size={16}

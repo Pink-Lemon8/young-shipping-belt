@@ -6,6 +6,7 @@ import { getQueueByBeltCodeInProcessView } from "@/server/controller/queues";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Navbar } from "@/components/layout/management/sidebar/navbar";
+import { parseProcessViewItemStatus } from "@/lib/process-view-item-status";
 
 function DataSkeleton() {
   return (
@@ -40,6 +41,7 @@ type SearchParams = {
   search: string | undefined;
   beltCode: string | undefined;
   status: string | undefined;
+  itemStatus: string | undefined;
   pharmacistReviewStatus: string | undefined;
   page: number | undefined;
   maxOnPage: number | undefined;
@@ -65,6 +67,7 @@ async function ProcessViewDataWrapper({
   const search = filter.search;
   const beltCode = "C";
   const status = filter.status;
+  const itemStatus = parseProcessViewItemStatus(filter.itemStatus);
   const pharmacistReviewStatus = filter.pharmacistReviewStatus;
   const page = filter.page ? Number(filter.page) : 1;
   const maxOnPage = filter.maxOnPage ? Number(filter.maxOnPage) : 15;
@@ -92,6 +95,7 @@ async function ProcessViewDataWrapper({
       isSkipped: isSkipped ? isSkipped : undefined,
       isLocked: isLocked ? isLocked : undefined,
       reviewCountLessThan: reviewCountLessThan ? reviewCountLessThanValue : undefined,
+      itemStatus,
       groupId: groupId ? groupId : undefined,
       shipDateFrom: shipDateFrom || undefined,
       shipDateTo: shipDateTo || undefined,

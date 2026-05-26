@@ -26,6 +26,8 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import type { ProcessViewItemStatus } from "@/lib/process-view-item-status";
+import { PROCESS_VIEW_ITEM_STATUS_ANY } from "@/lib/process-view-item-status";
 
 function getOrderedItemKey(item: {
   packageId?: string | number | null;
@@ -56,6 +58,21 @@ function getOrderedItems(metadata: any): Record<string, boolean> {
   return metadata.orderedItems;
 }
 
+function getSpecialItems(metadata: any): Record<string, boolean> {
+  if (
+    !metadata ||
+    typeof metadata !== "object" ||
+    Array.isArray(metadata) ||
+    !metadata.specialItems ||
+    typeof metadata.specialItems !== "object" ||
+    Array.isArray(metadata.specialItems)
+  ) {
+    return {};
+  }
+
+  return metadata.specialItems;
+}
+
 function getReceivedItems(metadata: any): Record<string, boolean> {
   if (
     !metadata ||
@@ -69,6 +86,57 @@ function getReceivedItems(metadata: any): Record<string, boolean> {
   }
 
   return metadata.receivedItems;
+}
+
+function beltQueueMatchesItemStatusFilter(
+  itemStatus: ProcessViewItemStatus,
+  expectedItems: Array<{
+    packageId?: string | number | null;
+    legacyId?: string | number | null;
+    din?: string | number | null;
+    description?: string | null;
+  }>,
+  metadata: unknown,
+) {
+  if (itemStatus === PROCESS_VIEW_ITEM_STATUS_ANY) return true;
+  if (expectedItems.length === 0) return false;
+
+  const orderedItems = getOrderedItems(metadata);
+  const specialItems = getSpecialItems(metadata);
+  const receivedItems = getReceivedItems(metadata);
+
+  let prepDone = 0;
+  let specialOnlyLines = 0;
+  let receivedDone = 0;
+
+  for (const expectedItem of expectedItems) {
+    const key = getOrderedItemKey(expectedItem);
+    const isOrdered = Boolean(orderedItems[key]);
+    const isSpecial = Boolean(specialItems[key]);
+    const isSpecialOnly = isSpecial && !isOrdered;
+
+    if (isOrdered || isSpecial) prepDone += 1;
+    if (isSpecialOnly) specialOnlyLines += 1;
+    if (receivedItems[key]) receivedDone += 1;
+  }
+
+  switch (itemStatus) {
+    case "FULL_PREP":
+      return prepDone === expectedItems.length;
+    case "FULL_ORDERED_ONLY":
+      return prepDone === expectedItems.length && specialOnlyLines === 0;
+    case "FULL_SPECIAL_ONLY":
+      return specialOnlyLines === expectedItems.length;
+    case "FULL_RECEIVED":
+      return receivedDone === expectedItems.length;
+    case "MISSING_PREP":
+      return prepDone < expectedItems.length;
+    case "MISSING_RECEIVE":
+      return prepDone === expectedItems.length && receivedDone < expectedItems.length;
+    case "ANY":
+    default:
+      return true;
+  }
 }
 
 export async function getQueueByBeltCode(
@@ -266,6 +334,7 @@ export async function getQueueByBeltCodeInProcessView(
     shipDateTo?: string | undefined;
     /** When set (e.g. 2), only orders with fewer than this many pharmacist reviews are returned. */
     reviewCountLessThan?: number | undefined;
+    itemStatus?: ProcessViewItemStatus | undefined;
     isCv?: boolean | undefined;
   },
   getLogs: boolean | undefined = false,
@@ -285,7 +354,7 @@ export async function getQueueByBeltCodeInProcessView(
         : undefined;
 
     const reviewCountLessThan = filter.reviewCountLessThan;
-    const whereCondition = and(
+    const baseWhereCondition = and(
       or(eq(beltQueues.beltCode, beltCode?.charAt(0))),
       status?.length ? inArray(beltQueues.status, status) : undefined,
       filter.search
@@ -304,6 +373,63 @@ export async function getQueueByBeltCodeInProcessView(
       filter.isCv !== undefined ? eq(beltQueues.isCv, filter.isCv) : undefined,
       reviewCountLessThan != null
         ? sql`${beltQueues.orderId} NOT IN (SELECT order_id FROM belt_queues_pharmacist_review GROUP BY order_id HAVING COUNT(*) >= ${reviewCountLessThan})`
+        : undefined,
+    );
+
+    let itemStatusOrderIds: string[] | undefined;
+    if (
+      filter.itemStatus &&
+      filter.itemStatus !== PROCESS_VIEW_ITEM_STATUS_ANY
+    ) {
+      const candidateQueues = await db
+        .select({
+          orderId: beltQueues.orderId,
+          metadata: beltQueues.metadata,
+        })
+        .from(beltQueues)
+        .where(baseWhereCondition);
+
+      const candidateOrderIds = candidateQueues.map((queue) => queue.orderId);
+      const expectedItems =
+        candidateOrderIds.length > 0
+          ? await db
+            .select({
+              orderId: orderExpectedItems.orderId,
+              packageId: orderExpectedItems.packageId,
+              legacyId: orderExpectedItems.legacyId,
+              din: orderExpectedItems.din,
+              description: orderExpectedItems.description,
+            })
+            .from(orderExpectedItems)
+            .where(inArray(orderExpectedItems.orderId, candidateOrderIds))
+          : [];
+
+      const expectedItemsByOrderId = new Map<string, typeof expectedItems>();
+      for (const expectedItem of expectedItems) {
+        const existing = expectedItemsByOrderId.get(expectedItem.orderId) ?? [];
+        expectedItemsByOrderId.set(expectedItem.orderId, [
+          ...existing,
+          expectedItem,
+        ]);
+      }
+
+      itemStatusOrderIds = candidateQueues
+        .filter((queue) =>
+          beltQueueMatchesItemStatusFilter(
+            filter.itemStatus!,
+            expectedItemsByOrderId.get(queue.orderId) ?? [],
+            queue.metadata,
+          ),
+        )
+        .map((queue) => queue.orderId);
+    }
+
+    const whereCondition = and(
+      baseWhereCondition,
+      itemStatusOrderIds
+        ? itemStatusOrderIds.length > 0
+          ? inArray(beltQueues.orderId, itemStatusOrderIds)
+          : sql`FALSE`
         : undefined,
     );
 
@@ -378,30 +504,7 @@ export async function getQueueByBeltCodeInProcessView(
                 }
                 : undefined,
           },
-          where: (queue, { eq, inArray, and, gte, lte }) =>
-            and(
-              or(eq(queue.beltCode, beltCode?.charAt(0))),
-              status?.length ? inArray(queue.status, status) : undefined,
-              filter.search
-                ? or(
-                  like(queue.orderId, `%${filter.search}%`),
-                  like(queue.patientId, `%${filter.search}%`),
-                  like(queue.trackingNumber, `%${filter.search}%`),
-                  like(queue.patientName, `%${filter.search}%`),
-                )
-                : undefined,
-              filter.isSkipped
-                ? eq(queue.skipped, filter.isSkipped)
-                : undefined,
-              filter.isLocked ? isNotNull(queue.lockedForUserId) : undefined,
-              filter.groupId ? eq(queue.groupId, filter.groupId) : undefined,
-              shipDateFromDate ? gte(queue.shippedAt, shipDateFromDate) : undefined,
-              shipDateToDate ? lte(queue.shippedAt, shipDateToDate) : undefined,
-              filter.isCv !== undefined ? eq(queue.isCv, filter.isCv) : undefined,
-              reviewCountLessThan != null
-                ? sql`${queue.orderId} NOT IN (SELECT order_id FROM belt_queues_pharmacist_review GROUP BY order_id HAVING COUNT(*) >= ${reviewCountLessThan})`
-                : undefined,
-            ),
+          where: () => whereCondition,
           orderBy: (queue, { asc, desc }) => [desc(queue.labelCreatedAt)],
         })
         .execute(),
@@ -637,10 +740,16 @@ export async function getQueueByBeltCodeInProcessView(
     const finalQueueWithOrderedStatus = finalQueue.map((item) => {
       const expectedItems = expectedItemsByOrderId.get(item.orderId) ?? [];
       const orderedItems = getOrderedItems(item.metadata);
+      const specialItems = getSpecialItems(item.metadata);
       const receivedItems = getReceivedItems(item.metadata);
-      const orderedItemsCount = expectedItems.filter(
-        (expectedItem) => orderedItems[getOrderedItemKey(expectedItem)],
-      ).length;
+      const prepItemsCount = expectedItems.filter((expectedItem) => {
+        const key = getOrderedItemKey(expectedItem);
+        return orderedItems[key] || specialItems[key];
+      }).length;
+      const specialItemsCount = expectedItems.filter((expectedItem) => {
+        const key = getOrderedItemKey(expectedItem);
+        return specialItems[key] && !orderedItems[key];
+      }).length;
       const receivedItemsCount = expectedItems.filter(
         (expectedItem) => receivedItems[getOrderedItemKey(expectedItem)],
       ).length;
@@ -648,10 +757,13 @@ export async function getQueueByBeltCodeInProcessView(
       return {
         ...item,
         expectedItemsCount: expectedItems.length,
-        orderedItemsCount,
+        orderedItemsCount: prepItemsCount,
+        specialItemsCount,
         receivedItemsCount,
         allItemsOrdered:
-          expectedItems.length > 0 && orderedItemsCount === expectedItems.length,
+          expectedItems.length > 0 && prepItemsCount === expectedItems.length,
+        allItemsSpecial:
+          expectedItems.length > 0 && specialItemsCount === expectedItems.length,
         allItemsReceived:
           expectedItems.length > 0 &&
           receivedItemsCount === expectedItems.length,

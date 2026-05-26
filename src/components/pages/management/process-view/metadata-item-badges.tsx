@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckCheck, PackageCheck } from "lucide-react";
+import { CheckCheck, PackageCheck, Sparkles } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +14,9 @@ const orderedBadgeClass =
 
 const receivedBadgeClass =
   "inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-linear-to-r from-sky-500/15 to-blue-500/10 px-2.5 py-1 text-[11px] font-semibold text-sky-800 shadow-sm ring-1 ring-sky-500/10 dark:text-sky-300";
+
+const specialBadgeClass =
+  "inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-linear-to-r from-purple-500/15 to-fuchsia-500/10 px-2.5 py-1 text-[11px] font-semibold text-purple-800 shadow-sm ring-1 ring-purple-500/10 dark:text-purple-300";
 
 function withTooltip(node: ReactNode, content: string) {
   return (
@@ -52,6 +55,20 @@ export function ReceivedMetadataBadge({
     <span className={receivedBadgeClass}>
       <PackageCheck className="h-3.5 w-3.5" />
       Received
+    </span>
+  );
+  return tooltip ? withTooltip(badge, tooltip) : badge;
+}
+
+export function SpecialMetadataBadge({
+  tooltip,
+}: {
+  tooltip?: string;
+}) {
+  const badge = (
+    <span className={specialBadgeClass}>
+      <Sparkles className="h-3.5 w-3.5" />
+      Special
     </span>
   );
   return tooltip ? withTooltip(badge, tooltip) : badge;

@@ -20,6 +20,7 @@ import {
   updateExpectedOrderItemFlags,
   updateExpectedOrderItemOrdered,
   updateExpectedOrderItemReceived,
+  updateExpectedOrderItemSpecial,
 } from "../info/action";
 
 type ViewItemsDialogProps = {
@@ -67,6 +68,7 @@ export function ViewItemsDialog({
           ? {
             ...currentItem,
             ordered,
+            special: ordered ? false : currentItem.special,
             received: false,
           }
           : currentItem,
@@ -102,8 +104,57 @@ export function ViewItemsDialog({
     }
   };
 
+  const handleSpecialChange = async (item: any, special: boolean) => {
+    if (!item.orderId || !item.orderedKey) return;
+
+    const previousItems = items;
+    setItems((currentItems) =>
+      currentItems.map((currentItem) =>
+        currentItem.orderId === item.orderId &&
+          currentItem.orderedKey === item.orderedKey
+          ? {
+            ...currentItem,
+            ordered: special ? false : currentItem.ordered,
+            special,
+            received: false,
+          }
+          : currentItem,
+      ),
+    );
+    setSavingKeys((currentKeys) => {
+      const nextKeys = new Set(currentKeys);
+      nextKeys.add(`${item.orderId}:${item.orderedKey}`);
+      return nextKeys;
+    });
+
+    const result = await updateExpectedOrderItemSpecial({
+      orderId: item.orderId,
+      orderedKey: item.orderedKey,
+      special,
+    });
+
+    setSavingKeys((currentKeys) => {
+      const nextKeys = new Set(currentKeys);
+      nextKeys.delete(`${item.orderId}:${item.orderedKey}`);
+      return nextKeys;
+    });
+
+    if (result?.status !== "success") {
+      setItems(previousItems);
+      toast({
+        title: "Could not update item",
+        description: result?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      router.refresh();
+    }
+  };
+
   const handleReceivedChange = async (item: any, received: boolean) => {
-    if (!item.orderId || !item.orderedKey || !item.ordered) return;
+    if (!item.orderId || !item.orderedKey || (!item.ordered && !item.special)) {
+      return;
+    }
 
     const previousItems = items;
     setItems((currentItems) =>
@@ -157,6 +208,7 @@ export function ViewItemsDialog({
       currentItems.map((item) => ({
         ...item,
         ordered,
+        special: ordered ? false : item.special,
         received: false,
       })),
     );
@@ -184,9 +236,53 @@ export function ViewItemsDialog({
     }
   };
 
+  const handleBulkSpecialChange = async (special: boolean) => {
+    const itemsToUpdate = items.filter((item) => item.orderId && item.orderedKey);
+    if (itemsToUpdate.length === 0 || savingKeys.size > 0) return;
+
+    const previousItems = items;
+    const keysToSave = itemsToUpdate.map(
+      (item) => `${item.orderId}:${item.orderedKey}`,
+    );
+
+    setItems((currentItems) =>
+      currentItems.map((item) => ({
+        ...item,
+        ordered: special ? false : item.ordered,
+        special,
+        received: false,
+      })),
+    );
+    setSavingKeys(new Set(keysToSave));
+
+    const result = await updateExpectedOrderItemFlags(
+      itemsToUpdate.map((item) => ({
+        orderId: item.orderId,
+        orderedKey: item.orderedKey,
+        special,
+      })),
+    );
+
+    setSavingKeys(new Set());
+
+    if (result?.status !== "success") {
+      setItems(previousItems);
+      toast({
+        title: "Could not update items",
+        description: result?.message ?? "Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      router.refresh();
+    }
+  };
+
   const handleBulkReceivedChange = async (received: boolean) => {
     const itemsToUpdate = items.filter(
-      (item) => item.orderId && item.orderedKey && (item.ordered || !received),
+      (item) =>
+        item.orderId &&
+        item.orderedKey &&
+        (item.ordered || item.special || !received),
     );
     if (itemsToUpdate.length === 0 || savingKeys.size > 0) return;
 
@@ -197,7 +293,9 @@ export function ViewItemsDialog({
 
     setItems((currentItems) =>
       currentItems.map((item) =>
-        item.ordered || !received ? { ...item, received } : item,
+        item.ordered || item.special || !received
+          ? { ...item, received }
+          : item,
       ),
     );
     setSavingKeys(new Set(keysToSave));
@@ -227,8 +325,14 @@ export function ViewItemsDialog({
   const hasItems = items.length > 0;
   const isSaving = savingKeys.size > 0;
   const allItemsOrdered = hasItems && items.every((item) => item.ordered);
+  const allItemsSpecial = hasItems && items.every((item) => item.special);
   const allItemsReceived = hasItems && items.every((item) => item.received);
+  const anyItemsOrdered = items.some((item) => item.ordered);
+  const anyItemsSpecial = items.some((item) => item.special);
+  const allItemsEligibleForReceive =
+    hasItems && items.every((item) => item.ordered || item.special);
   const nextOrderedValue = !allItemsOrdered;
+  const nextSpecialValue = !allItemsSpecial;
   const nextReceivedValue = !allItemsReceived;
   const getBulkButtonClass = (isClear: boolean) =>
     cn(
@@ -236,6 +340,13 @@ export function ViewItemsDialog({
       isClear
         ? "border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
         : "border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-700",
+    );
+  const getSpecialBulkButtonClass = (isClear: boolean) =>
+    cn(
+      "h-4 px-1 mt-0.5 text-[9px] leading-none",
+      isClear
+        ? "border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        : "border-purple-500/40 text-purple-700 hover:bg-purple-500/10 hover:text-purple-700 dark:text-purple-300 dark:hover:text-purple-300",
     );
 
   return (
@@ -276,7 +387,11 @@ export function ViewItemsDialog({
                             variant="outline"
                             size="sm"
                             className={getBulkButtonClass(allItemsOrdered)}
-                            disabled={!hasItems || isSaving}
+                            disabled={
+                              !hasItems ||
+                              isSaving ||
+                              (nextOrderedValue && anyItemsSpecial)
+                            }
                             aria-label={
                               allItemsOrdered
                                 ? "Clear ordered items"
@@ -285,6 +400,30 @@ export function ViewItemsDialog({
                             onClick={() => handleBulkOrderedChange(nextOrderedValue)}
                           >
                             {allItemsOrdered ? "Clear" : "All"}
+                          </Button>
+                        </div>
+                      </th>
+                      <th className="px-1 py-3 font-medium">
+                        <div className="flex items-center justify-center gap-0.5 whitespace-nowrap">
+                          <span>Special</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className={getSpecialBulkButtonClass(allItemsSpecial)}
+                            disabled={
+                              !hasItems ||
+                              isSaving ||
+                              (nextSpecialValue && anyItemsOrdered)
+                            }
+                            aria-label={
+                              allItemsSpecial
+                                ? "Clear special items"
+                                : "Mark all items as special"
+                            }
+                            onClick={() => handleBulkSpecialChange(nextSpecialValue)}
+                          >
+                            {allItemsSpecial ? "Clear" : "All"}
                           </Button>
                         </div>
                       </th>
@@ -299,7 +438,7 @@ export function ViewItemsDialog({
                             disabled={
                               !hasItems ||
                               isSaving ||
-                              (nextReceivedValue && !allItemsOrdered)
+                              (nextReceivedValue && !allItemsEligibleForReceive)
                             }
                             aria-label={
                               allItemsReceived
@@ -343,6 +482,9 @@ export function ViewItemsDialog({
                               <td className="px-2 py-3">
                                 <Skeleton className="mx-auto h-4 w-4 rounded-sm" />
                               </td>
+                              <td className="px-2 py-3">
+                                <Skeleton className="mx-auto h-4 w-4 rounded-sm" />
+                              </td>
                             </>
                           ) : (
                             <>
@@ -355,6 +497,7 @@ export function ViewItemsDialog({
                               <td className="px-2 py-3 text-center">
                                 <Checkbox
                                   checked={Boolean(item.ordered)}
+                                  disabled={Boolean(item.special)}
                                   aria-label={`Mark ${item.description || item.packageId} as ordered`}
                                   onCheckedChange={(checked) =>
                                     handleOrderedChange(item, checked === true)
@@ -363,8 +506,18 @@ export function ViewItemsDialog({
                               </td>
                               <td className="px-2 py-3 text-center">
                                 <Checkbox
+                                  checked={Boolean(item.special)}
+                                  disabled={Boolean(item.ordered)}
+                                  aria-label={`Mark ${item.description || item.packageId} as special`}
+                                  onCheckedChange={(checked) =>
+                                    handleSpecialChange(item, checked === true)
+                                  }
+                                />
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <Checkbox
                                   checked={Boolean(item.received)}
-                                  disabled={!item.ordered}
+                                  disabled={!item.ordered && !item.special}
                                   aria-label={`Mark ${item.description || item.packageId} as received`}
                                   onCheckedChange={(checked) =>
                                     handleReceivedChange(item, checked === true)
@@ -380,7 +533,7 @@ export function ViewItemsDialog({
                 </table>
               </div>
               <div className="space-y-3 md:hidden">
-                <div className="grid grid-cols-2 gap-2 rounded-md border bg-muted/30 p-2">
+                <div className="grid grid-cols-3 gap-2 rounded-md border bg-muted/30 p-2">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-medium">Ordered</span>
                     <Button
@@ -388,7 +541,11 @@ export function ViewItemsDialog({
                       variant="outline"
                       size="sm"
                       className={getBulkButtonClass(allItemsOrdered)}
-                      disabled={!hasItems || isSaving}
+                      disabled={
+                        !hasItems ||
+                        isSaving ||
+                        (nextOrderedValue && anyItemsSpecial)
+                      }
                       aria-label={
                         allItemsOrdered
                           ? "Clear ordered items"
@@ -397,6 +554,28 @@ export function ViewItemsDialog({
                       onClick={() => handleBulkOrderedChange(nextOrderedValue)}
                     >
                       {allItemsOrdered ? "Clear" : "All"}
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium">Special</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={getSpecialBulkButtonClass(allItemsSpecial)}
+                      disabled={
+                        !hasItems ||
+                        isSaving ||
+                        (nextSpecialValue && anyItemsOrdered)
+                      }
+                      aria-label={
+                        allItemsSpecial
+                          ? "Clear special items"
+                          : "Mark all items as special"
+                      }
+                      onClick={() => handleBulkSpecialChange(nextSpecialValue)}
+                    >
+                      {allItemsSpecial ? "Clear" : "All"}
                     </Button>
                   </div>
                   <div className="flex items-center justify-between gap-2">
@@ -409,7 +588,7 @@ export function ViewItemsDialog({
                       disabled={
                         !hasItems ||
                         isSaving ||
-                        (nextReceivedValue && !allItemsOrdered)
+                        (nextReceivedValue && !allItemsEligibleForReceive)
                       }
                       aria-label={
                         allItemsReceived
@@ -459,11 +638,12 @@ export function ViewItemsDialog({
                               <div className="font-medium">{item.quantity}</div>
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 border-t pt-3">
+                          <div className="grid grid-cols-3 gap-2 border-t pt-3">
                             <label className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-2 text-xs font-medium">
                               Ordered
                               <Checkbox
                                 checked={Boolean(item.ordered)}
+                                disabled={Boolean(item.special)}
                                 aria-label={`Mark ${item.description || item.packageId} as ordered`}
                                 onCheckedChange={(checked) =>
                                   handleOrderedChange(item, checked === true)
@@ -471,10 +651,21 @@ export function ViewItemsDialog({
                               />
                             </label>
                             <label className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-2 text-xs font-medium">
+                              Special
+                              <Checkbox
+                                checked={Boolean(item.special)}
+                                disabled={Boolean(item.ordered)}
+                                aria-label={`Mark ${item.description || item.packageId} as special`}
+                                onCheckedChange={(checked) =>
+                                  handleSpecialChange(item, checked === true)
+                                }
+                              />
+                            </label>
+                            <label className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-2 text-xs font-medium">
                               Received
                               <Checkbox
                                 checked={Boolean(item.received)}
-                                disabled={!item.ordered}
+                                disabled={!item.ordered && !item.special}
                                 aria-label={`Mark ${item.description || item.packageId} as received`}
                                 onCheckedChange={(checked) =>
                                   handleReceivedChange(item, checked === true)

@@ -71,7 +71,7 @@ export default function BeltStage3Data({
       setResult(res);
       toast({
         title: "Success",
-        description: res?.messages?.join(", ") ?? "Order completed",
+        description: "Order completed",
       });
       const url = new URL(window.location.href);
       const hasQuery = url.search.length > 0;
